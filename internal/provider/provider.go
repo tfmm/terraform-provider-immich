@@ -94,6 +94,7 @@ func (p *immichProvider) Resources(ctx context.Context) []func() resource.Resour
 		NewLibraryResource,
 		NewActivityResource,
 		NewPersonResource,
+		NewPartnerResource,
 	}
 }
 
