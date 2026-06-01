@@ -91,6 +91,7 @@ func (p *immichProvider) Resources(ctx context.Context) []func() resource.Resour
 		NewSharedLinkResource,
 		NewAlbumResource,
 		NewSystemConfigResource,
+		NewLibraryResource,
 	}
 }
 
@@ -98,6 +99,7 @@ func (p *immichProvider) DataSources(ctx context.Context) []func() datasource.Da
 	return []func() datasource.DataSource{
 		NewUsersDataSource,
 		NewAlbumsDataSource,
+		NewLibrariesDataSource,
 	}
 }
 
