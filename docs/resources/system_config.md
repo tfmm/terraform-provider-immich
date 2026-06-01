@@ -70,6 +70,10 @@ resource "immich_system_config" "example" {
 - `storage_template` (Attributes) (see [below for nested schema](#nestedatt--storage_template))
 - `templates` (Attributes) (see [below for nested schema](#nestedatt--templates))
 
+### Read-Only
+
+- `id` (String) Virtual identifier for the singleton resource.
+
 <a id="nestedatt--machine_learning"></a>
 ### Nested Schema for `machine_learning`
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -12,6 +13,7 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var _ resource.Resource = &systemConfigResource{}
+var _ resource.ResourceWithImportState = &systemConfigResource{}
 
 func NewSystemConfigResource() resource.Resource {
 	return &systemConfigResource{}
@@ -28,6 +30,7 @@ type systemConfigResourceModel struct {
 	// But Terraform plugin framework works best with explicit nested attributes.
 	// To keep it manageable and robust, we'll focus on some common sections first.
 	
+	ID              types.String          `tfsdk:"id"`
 	PasswordLogin   *passwordLoginModel   `tfsdk:"password_login"`
 	OAuth           *oauthModel           `tfsdk:"oauth"`
 	StorageTemplate *storageTemplateModel `tfsdk:"storage_template"`
@@ -101,6 +104,10 @@ func (r *systemConfigResource) Schema(ctx context.Context, req resource.SchemaRe
 		MarkdownDescription: "Manages Immich system configuration. This is a singleton resource.",
 
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "Virtual identifier for the singleton resource.",
+			},
 			"password_login": schema.SingleNestedAttribute{
 				Optional: true,
 				Attributes: map[string]schema.Attribute{
@@ -319,6 +326,7 @@ func (r *systemConfigResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
+	data.ID = types.StringValue("system_config")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -338,6 +346,7 @@ func (r *systemConfigResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	data = r.mapClientToModel(*config, data)
+	data.ID = types.StringValue("system_config")
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -366,6 +375,7 @@ func (r *systemConfigResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
+	data.ID = types.StringValue("system_config")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -596,4 +606,8 @@ func (r *systemConfigResource) mapClientToModel(config client.SystemConfig, mode
 	}
 
 	return model
+}
+
+func (r *systemConfigResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
