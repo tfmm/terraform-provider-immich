@@ -22,4 +22,22 @@ resource "immich_system_config" "example" {
     url        = "http://immich-machine-learning:3003"
     clip_model = "ViT-L-14__openai"
   }
+
+  notifications = {
+    smtp = {
+      enabled  = true
+      host     = "smtp.example.com"
+      port     = 587
+      username = "user@example.com"
+      password = "secure-smtp-password"
+      from     = "immich@example.com"
+      secure   = true
+    }
+  }
+
+  templates = {
+    email = {
+      welcome_template = "Welcome to Immich, {{name}}!"
+    }
+  }
 }

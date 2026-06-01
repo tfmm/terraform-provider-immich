@@ -37,6 +37,24 @@ resource "immich_system_config" "example" {
     url        = "http://immich-machine-learning:3003"
     clip_model = "ViT-L-14__openai"
   }
+
+  notifications = {
+    smtp = {
+      enabled  = true
+      host     = "smtp.example.com"
+      port     = 587
+      username = "user@example.com"
+      password = "secure-smtp-password"
+      from     = "immich@example.com"
+      secure   = true
+    }
+  }
+
+  templates = {
+    email = {
+      welcome_template = "Welcome to Immich, {{name}}!"
+    }
+  }
 }
 ```
 
@@ -46,9 +64,11 @@ resource "immich_system_config" "example" {
 ### Optional
 
 - `machine_learning` (Attributes) (see [below for nested schema](#nestedatt--machine_learning))
+- `notifications` (Attributes) (see [below for nested schema](#nestedatt--notifications))
 - `oauth` (Attributes) (see [below for nested schema](#nestedatt--oauth))
 - `password_login` (Attributes) (see [below for nested schema](#nestedatt--password_login))
 - `storage_template` (Attributes) (see [below for nested schema](#nestedatt--storage_template))
+- `templates` (Attributes) (see [below for nested schema](#nestedatt--templates))
 
 <a id="nestedatt--machine_learning"></a>
 ### Nested Schema for `machine_learning`
@@ -59,6 +79,30 @@ Optional:
 - `enabled` (Boolean) Enable machine learning features.
 - `facial_recognition_model` (String) Facial recognition model to use.
 - `url` (String) URL of the machine learning server.
+
+
+<a id="nestedatt--notifications"></a>
+### Nested Schema for `notifications`
+
+Optional:
+
+- `smtp` (Attributes) (see [below for nested schema](#nestedatt--notifications--smtp))
+
+<a id="nestedatt--notifications--smtp"></a>
+### Nested Schema for `notifications.smtp`
+
+Optional:
+
+- `enabled` (Boolean) Enable SMTP email notifications.
+- `from` (String) Sender email address.
+- `host` (String) SMTP server hostname.
+- `ignore_cert` (Boolean) Whether to ignore certificate validation errors.
+- `password` (String, Sensitive) SMTP authentication password.
+- `port` (Number) SMTP server port.
+- `reply_to` (String) Reply-to email address.
+- `secure` (Boolean) Whether to use TLS/SSL.
+- `username` (String) SMTP authentication username.
+
 
 
 <a id="nestedatt--oauth"></a>
@@ -94,3 +138,20 @@ Optional:
 Optional:
 
 - `template` (String) Storage template (e.g. `{{y}}/{{y}}-{{m}}-{{d}}/{{filename}}`).
+
+
+<a id="nestedatt--templates"></a>
+### Nested Schema for `templates`
+
+Optional:
+
+- `email` (Attributes) (see [below for nested schema](#nestedatt--templates--email))
+
+<a id="nestedatt--templates--email"></a>
+### Nested Schema for `templates.email`
+
+Optional:
+
+- `album_invite_template` (String) Email template for album invitations.
+- `album_update_template` (String) Email template for album updates.
+- `welcome_template` (String) Email template for welcome emails.

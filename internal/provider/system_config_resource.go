@@ -32,6 +32,8 @@ type systemConfigResourceModel struct {
 	OAuth           *oauthModel           `tfsdk:"oauth"`
 	StorageTemplate *storageTemplateModel `tfsdk:"storage_template"`
 	MachineLearning *machineLearningModel `tfsdk:"machine_learning"`
+	Notifications   *notificationsModel   `tfsdk:"notifications"`
+	Templates       *templatesModel       `tfsdk:"templates"`
 }
 
 type passwordLoginModel struct {
@@ -43,6 +45,32 @@ type machineLearningModel struct {
 	URL            types.String `tfsdk:"url"`
 	ClipModel      types.String `tfsdk:"clip_model"`
 	FacialRecognitionModel types.String `tfsdk:"facial_recognition_model"`
+}
+
+type notificationsModel struct {
+	SMTP *smtpModel `tfsdk:"smtp"`
+}
+
+type smtpModel struct {
+	Enabled    types.Bool   `tfsdk:"enabled"`
+	Host       types.String `tfsdk:"host"`
+	Port       types.Int64  `tfsdk:"port"`
+	Username   types.String `tfsdk:"username"`
+	Password   types.String `tfsdk:"password"`
+	From       types.String `tfsdk:"from"`
+	ReplyTo    types.String `tfsdk:"reply_to"`
+	Secure     types.Bool   `tfsdk:"secure"`
+	IgnoreCert types.Bool   `tfsdk:"ignore_cert"`
+}
+
+type templatesModel struct {
+	Email *emailTemplatesModel `tfsdk:"email"`
+}
+
+type emailTemplatesModel struct {
+	AlbumInviteTemplate types.String `tfsdk:"album_invite_template"`
+	AlbumUpdateTemplate types.String `tfsdk:"album_update_template"`
+	WelcomeTemplate     types.String `tfsdk:"welcome_template"`
 }
 
 type oauthModel struct {
@@ -169,6 +197,78 @@ func (r *systemConfigResource) Schema(ctx context.Context, req resource.SchemaRe
 					"facial_recognition_model": schema.StringAttribute{
 						Optional:            true,
 						MarkdownDescription: "Facial recognition model to use.",
+					},
+				},
+			},
+			"notifications": schema.SingleNestedAttribute{
+				Optional: true,
+				Attributes: map[string]schema.Attribute{
+					"smtp": schema.SingleNestedAttribute{
+						Optional: true,
+						Attributes: map[string]schema.Attribute{
+							"enabled": schema.BoolAttribute{
+								Optional:            true,
+								Computed:            true,
+								MarkdownDescription: "Enable SMTP email notifications.",
+							},
+							"host": schema.StringAttribute{
+								Optional:            true,
+								MarkdownDescription: "SMTP server hostname.",
+							},
+							"port": schema.Int64Attribute{
+								Optional:            true,
+								MarkdownDescription: "SMTP server port.",
+							},
+							"username": schema.StringAttribute{
+								Optional:            true,
+								MarkdownDescription: "SMTP authentication username.",
+							},
+							"password": schema.StringAttribute{
+								Optional:            true,
+								Sensitive:           true,
+								MarkdownDescription: "SMTP authentication password.",
+							},
+							"from": schema.StringAttribute{
+								Optional:            true,
+								MarkdownDescription: "Sender email address.",
+							},
+							"reply_to": schema.StringAttribute{
+								Optional:            true,
+								MarkdownDescription: "Reply-to email address.",
+							},
+							"secure": schema.BoolAttribute{
+								Optional:            true,
+								Computed:            true,
+								MarkdownDescription: "Whether to use TLS/SSL.",
+							},
+							"ignore_cert": schema.BoolAttribute{
+								Optional:            true,
+								Computed:            true,
+								MarkdownDescription: "Whether to ignore certificate validation errors.",
+							},
+						},
+					},
+				},
+			},
+			"templates": schema.SingleNestedAttribute{
+				Optional: true,
+				Attributes: map[string]schema.Attribute{
+					"email": schema.SingleNestedAttribute{
+						Optional: true,
+						Attributes: map[string]schema.Attribute{
+							"album_invite_template": schema.StringAttribute{
+								Optional:            true,
+								MarkdownDescription: "Email template for album invitations.",
+							},
+							"album_update_template": schema.StringAttribute{
+								Optional:            true,
+								MarkdownDescription: "Email template for album updates.",
+							},
+							"welcome_template": schema.StringAttribute{
+								Optional:            true,
+								MarkdownDescription: "Email template for welcome emails.",
+							},
+						},
 					},
 				},
 			},
@@ -317,6 +417,42 @@ func (r *systemConfigResource) mapModelToClient(model systemConfigResourceModel,
 		config.MachineLearning["facialRecognitionModel"] = model.MachineLearning.FacialRecognitionModel.ValueString()
 	}
 
+	if model.Notifications != nil {
+		if config.Notifications == nil {
+			config.Notifications = make(map[string]interface{})
+		}
+		if model.Notifications.SMTP != nil {
+			smtp := make(map[string]interface{})
+			smtp["enabled"] = model.Notifications.SMTP.Enabled.ValueBool()
+			smtp["from"] = model.Notifications.SMTP.From.ValueString()
+			smtp["replyTo"] = model.Notifications.SMTP.ReplyTo.ValueString()
+
+			transport := make(map[string]interface{})
+			transport["host"] = model.Notifications.SMTP.Host.ValueString()
+			transport["port"] = model.Notifications.SMTP.Port.ValueInt64()
+			transport["username"] = model.Notifications.SMTP.Username.ValueString()
+			transport["password"] = model.Notifications.SMTP.Password.ValueString()
+			transport["secure"] = model.Notifications.SMTP.Secure.ValueBool()
+			transport["ignoreCert"] = model.Notifications.SMTP.IgnoreCert.ValueBool()
+
+			smtp["transport"] = transport
+			config.Notifications["smtp"] = smtp
+		}
+	}
+
+	if model.Templates != nil {
+		if config.Templates == nil {
+			config.Templates = make(map[string]interface{})
+		}
+		if model.Templates.Email != nil {
+			email := make(map[string]interface{})
+			email["albumInviteTemplate"] = model.Templates.Email.AlbumInviteTemplate.ValueString()
+			email["albumUpdateTemplate"] = model.Templates.Email.AlbumUpdateTemplate.ValueString()
+			email["welcomeTemplate"] = model.Templates.Email.WelcomeTemplate.ValueString()
+			config.Templates["email"] = email
+		}
+	}
+
 	return config
 }
 
@@ -396,6 +532,66 @@ func (r *systemConfigResource) mapClientToModel(config client.SystemConfig, mode
 		}
 		if v, ok := config.MachineLearning["facialRecognitionModel"].(string); ok {
 			model.MachineLearning.FacialRecognitionModel = types.StringValue(v)
+		}
+	}
+
+	if config.Notifications != nil {
+		if model.Notifications == nil {
+			model.Notifications = &notificationsModel{}
+		}
+		if smtpConfig, ok := config.Notifications["smtp"].(map[string]interface{}); ok {
+			if model.Notifications.SMTP == nil {
+				model.Notifications.SMTP = &smtpModel{}
+			}
+			if v, ok := smtpConfig["enabled"].(bool); ok {
+				model.Notifications.SMTP.Enabled = types.BoolValue(v)
+			}
+			if v, ok := smtpConfig["from"].(string); ok {
+				model.Notifications.SMTP.From = types.StringValue(v)
+			}
+			if v, ok := smtpConfig["replyTo"].(string); ok {
+				model.Notifications.SMTP.ReplyTo = types.StringValue(v)
+			}
+			if transport, ok := smtpConfig["transport"].(map[string]interface{}); ok {
+				if v, ok := transport["host"].(string); ok {
+					model.Notifications.SMTP.Host = types.StringValue(v)
+				}
+				if v, ok := transport["port"].(float64); ok {
+					model.Notifications.SMTP.Port = types.Int64Value(int64(v))
+				} else if v, ok := transport["port"].(int64); ok {
+					model.Notifications.SMTP.Port = types.Int64Value(v)
+				}
+				if v, ok := transport["username"].(string); ok {
+					model.Notifications.SMTP.Username = types.StringValue(v)
+				}
+				// password usually not returned or masked
+				if v, ok := transport["secure"].(bool); ok {
+					model.Notifications.SMTP.Secure = types.BoolValue(v)
+				}
+				if v, ok := transport["ignoreCert"].(bool); ok {
+					model.Notifications.SMTP.IgnoreCert = types.BoolValue(v)
+				}
+			}
+		}
+	}
+
+	if config.Templates != nil {
+		if model.Templates == nil {
+			model.Templates = &templatesModel{}
+		}
+		if emailConfig, ok := config.Templates["email"].(map[string]interface{}); ok {
+			if model.Templates.Email == nil {
+				model.Templates.Email = &emailTemplatesModel{}
+			}
+			if v, ok := emailConfig["albumInviteTemplate"].(string); ok {
+				model.Templates.Email.AlbumInviteTemplate = types.StringValue(v)
+			}
+			if v, ok := emailConfig["albumUpdateTemplate"].(string); ok {
+				model.Templates.Email.AlbumUpdateTemplate = types.StringValue(v)
+			}
+			if v, ok := emailConfig["welcomeTemplate"].(string); ok {
+				model.Templates.Email.WelcomeTemplate = types.StringValue(v)
+			}
 		}
 	}
 
