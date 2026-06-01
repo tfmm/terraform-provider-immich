@@ -105,6 +105,7 @@ func (p *immichProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewAlbumsDataSource,
 		NewLibrariesDataSource,
 		NewActivitiesDataSource,
+		NewServerDataSource,
 	}
 }
 
