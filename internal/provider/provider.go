@@ -98,6 +98,7 @@ func (p *immichProvider) Resources(ctx context.Context) []func() resource.Resour
 		NewMemoryResource,
 		NewStackResource,
 		NewTagResource,
+		NewWorkflowResource,
 	}
 }
 
