@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/immich-app/terraform-provider-immich/internal/client"
+	"github.com/tfmm/terraform-provider-immich/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.

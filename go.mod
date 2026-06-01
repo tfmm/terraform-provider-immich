@@ -1,4 +1,4 @@
-module github.com/immich-app/terraform-provider-immich
+module github.com/tfmm/terraform-provider-immich
 
 go 1.26.3
 

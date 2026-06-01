@@ -2,11 +2,13 @@
 
 A Terraform/OpenTofu provider for managing [Immich](https://immich.app/).
 
+This provider and its documentation were developed with the assistance of Gemini, an AI assistant from Google.
+
 Immich is a high-performance self-hosted photo and video management solution. This provider allows you to manage users, API keys, albums, and shared links programmatically.
 
 ## Documentation
 
-Full documentation for the provider can be found on the [Terraform Registry](https://registry.terraform.io/providers/immich-app/immich/latest/docs).
+Full documentation for the provider can be found on the [Terraform Registry](https://registry.terraform.io/providers/tfmm/immich/latest/docs).
 
 ## Requirements
 
@@ -21,7 +23,7 @@ To use this provider, add the following to your Terraform configuration:
 terraform {
   required_providers {
     immich = {
-      source = "registry.terraform.io/immich-app/immich"
+      source = "registry.terraform.io/tfmm/immich"
     }
   }
 }
