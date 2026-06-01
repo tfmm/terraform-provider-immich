@@ -71,7 +71,6 @@ func (r *workflowResource) Schema(ctx context.Context, req resource.SchemaReques
 			"filters": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
-				Default:             booldefault.StaticBool(false), // placeholder for empty
 				MarkdownDescription: "JSON string representing the workflow filters.",
 			},
 			"actions": schema.StringAttribute{
