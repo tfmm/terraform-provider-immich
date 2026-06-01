@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "repository": "https://github.com/tfmm/terraform-provider-immich",
+  "description": "A Terraform and OpenTofu provider for managing Immich photo/video server resources.",
+  "keywords": [
+    "immich",
+    "terraform",
+    "opentofu",
+    "photo-management",
+    "self-hosted"
+  ]
+}

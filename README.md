@@ -17,13 +17,34 @@ Full documentation for the provider can be found on the [Terraform Registry](htt
 
 ## Installation
 
-To use this provider, add the following to your Terraform configuration:
+### Terraform
+
+To use this provider in Terraform, add the following to your configuration:
 
 ```hcl
 terraform {
   required_providers {
     immich = {
       source = "registry.terraform.io/tfmm/immich"
+    }
+  }
+}
+
+provider "immich" {
+  # endpoint = "http://your-immich-instance:2283/api"
+  # api_key  = "your-admin-api-key"
+}
+```
+
+### OpenTofu
+
+To use this provider in OpenTofu, add the following to your configuration:
+
+```hcl
+terraform {
+  required_providers {
+    immich = {
+      source = "registry.opentofu.org/tfmm/immich"
     }
   }
 }
