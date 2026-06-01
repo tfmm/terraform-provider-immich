@@ -159,3 +159,13 @@ Optional:
 - `album_invite_template` (String) Email template for album invitations.
 - `album_update_template` (String) Email template for album updates.
 - `welcome_template` (String) Email template for welcome emails.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import immich_system_config.example system_config
+```

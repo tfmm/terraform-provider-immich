@@ -52,3 +52,13 @@ resource "immich_library" "upload" {
 - `asset_count` (Number) Number of assets currently in the library.
 - `id` (String) Unique identifier for the library.
 - `owner_id` (String) Unique identifier of the library owner.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import immich_library.example 5678-abcd-1234
+```

@@ -54,3 +54,13 @@ Required:
 
 - `role` (String) Role granted to the user. Must be either `Editor` or `Viewer`.
 - `user_id` (String) Unique identifier of the user to share with.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import immich_album.example 5678-abcd-1234
+```

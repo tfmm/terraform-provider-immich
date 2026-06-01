@@ -34,3 +34,13 @@ resource "immich_api_key" "example" {
 
 - `id` (String) Unique identifier for the API key.
 - `secret` (String, Sensitive) The generated API key secret. This value is only returned when the key is created.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import immich_api_key.example 5678-abcd-1234
+```

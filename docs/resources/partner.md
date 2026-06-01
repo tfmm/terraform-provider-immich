@@ -34,3 +34,13 @@ resource "immich_partner" "example" {
 
 - `email` (String) Email of the partner user.
 - `name` (String) Name of the partner user.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import immich_partner.example partner-user-uuid
+```

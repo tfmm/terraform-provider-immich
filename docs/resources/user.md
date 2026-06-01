@@ -40,3 +40,13 @@ resource "immich_user" "example" {
 ### Read-Only
 
 - `id` (String) Unique identifier for the user.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import immich_user.example 5678-abcd-1234
+```

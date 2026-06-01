@@ -1,0 +1,1 @@
+terraform import immich_system_config.example system_config
