@@ -49,12 +49,21 @@ resource "immich_activity" "asset_like" {
 
 Import is supported using the following syntax:
 
-The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+### OpenTofu Import Block (Recommended)
 
-```shell
+```terraform
+import {
+  to = immich_activity.example
+  id = "album-uuid/activity-uuid"
+}
+```
+
+### CLI Import
+
+```terraform
 # Import with album_id and activity_id
-terraform import immich_activity.example album-uuid/activity-uuid
+tofu import immich_activity.example album-uuid/activity-uuid
 
 # Or import with album_id, asset_id and activity_id
-terraform import immich_activity.example album-uuid/asset-uuid/activity-uuid
+tofu import immich_activity.example album-uuid/asset-uuid/activity-uuid
 ```

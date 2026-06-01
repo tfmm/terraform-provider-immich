@@ -39,8 +39,17 @@ resource "immich_partner" "example" {
 
 Import is supported using the following syntax:
 
-The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+### OpenTofu Import Block (Recommended)
 
-```shell
-terraform import immich_partner.example partner-user-uuid
+```terraform
+import {
+  to = immich_partner.example
+  id = "partner-user-uuid"
+}
+```
+
+### CLI Import
+
+```terraform
+tofu import immich_partner.example partner-user-uuid
 ```

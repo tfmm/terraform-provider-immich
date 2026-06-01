@@ -5,7 +5,7 @@ We love your contributions! Here's a quick guide on how to help out.
 ## Development Requirements
 
 - [Go](https://golang.org/doc/install) >= 1.21
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
+- [OpenTofu](https://opentofu.org/docs/intro/install/) >= 1.6 or [Terraform](https://www.terraform.io/downloads.html) >= 1.0
 
 ## Building
 
@@ -22,7 +22,7 @@ To run the full suite of acceptance tests, you will need a running Immich instan
 export IMMICH_ENDPOINT=http://localhost:2283/api
 export IMMICH_API_KEY=your-admin-api-key
 
-# Run acceptance tests
+# Run acceptance tests (using go test)
 TF_ACC=1 go test ./... -v
 ```
 

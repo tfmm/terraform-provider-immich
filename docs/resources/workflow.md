@@ -66,8 +66,17 @@ resource "immich_workflow" "example" {
 
 Import is supported using the following syntax:
 
-The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+### OpenTofu Import Block (Recommended)
 
-```shell
-terraform import immich_workflow.example 5678-abcd-1234
+```terraform
+import {
+  to = immich_workflow.example
+  id = "5678-abcd-1234"
+}
+```
+
+### CLI Import
+
+```terraform
+tofu import immich_workflow.example 5678-abcd-1234
 ```

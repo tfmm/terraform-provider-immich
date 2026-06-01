@@ -61,7 +61,7 @@ The provider can be configured via environment variables:
 
 ## Import Support
 
-All resources support being imported into Terraform state. See the documentation for specific resource import identifiers.
+All resources support being imported into OpenTofu/Terraform state. This can be done using the `import` block (recommended for OpenTofu) or the `tofu import` command. See the documentation for specific resource import identifiers.
 
 ## Building The Provider
 

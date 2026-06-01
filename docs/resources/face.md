@@ -47,8 +47,17 @@ resource "immich_face" "manual" {
 
 Import is supported using the following syntax:
 
-The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+### OpenTofu Import Block (Recommended)
 
-```shell
-terraform import immich_face.example asset-uuid/face-uuid
+```terraform
+import {
+  to = immich_face.example
+  id = "asset-uuid/face-uuid"
+}
+```
+
+### CLI Import
+
+```terraform
+tofu import immich_face.example asset-uuid/face-uuid
 ```
