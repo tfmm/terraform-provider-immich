@@ -92,6 +92,7 @@ func (p *immichProvider) Resources(ctx context.Context) []func() resource.Resour
 		NewAlbumResource,
 		NewSystemConfigResource,
 		NewLibraryResource,
+		NewActivityResource,
 	}
 }
 
@@ -100,6 +101,7 @@ func (p *immichProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewUsersDataSource,
 		NewAlbumsDataSource,
 		NewLibrariesDataSource,
+		NewActivitiesDataSource,
 	}
 }
 
