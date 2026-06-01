@@ -19,6 +19,8 @@ builds:
       - windows
       - linux
       - darwin
+      - openbsd
+      - solaris
     goarch:
       - amd64
       - '386'
@@ -27,13 +29,15 @@ builds:
     ignore:
       - goos: darwin
         goarch: '386'
-      - goos: windows
+      - goos: darwin
         goarch: arm
       - goos: windows
-        goarch: '386'
-      - goos: freebsd
         goarch: arm
-      - goos: freebsd
+      - goos: solaris
+        goarch: arm
+      - goos: solaris
+        goarch: arm64
+      - goos: solaris
         goarch: '386'
     binary: '{{ .ProjectName }}_v{{ .Version }}'
 
