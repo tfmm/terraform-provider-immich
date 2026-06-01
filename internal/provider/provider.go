@@ -101,6 +101,7 @@ func (p *immichProvider) Resources(ctx context.Context) []func() resource.Resour
 		NewWorkflowResource,
 		NewAdminNotificationResource,
 		NewFaceResource,
+		NewAssetResource,
 	}
 }
 
@@ -113,6 +114,7 @@ func (p *immichProvider) DataSources(ctx context.Context) []func() datasource.Da
 		NewServerDataSource,
 		NewNotificationsDataSource,
 		NewFacesDataSource,
+		NewAssetsDataSource,
 	}
 }
 
