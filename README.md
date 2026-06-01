@@ -59,6 +59,10 @@ The provider can be configured via environment variables:
 - `IMMICH_ENDPOINT`: The full URL of the Immich API (e.g., `http://192.168.1.10:2283/api`)
 - `IMMICH_API_KEY`: Your Immich API key.
 
+## Import Support
+
+All resources support being imported into Terraform state. See the documentation for specific resource import identifiers.
+
 ## Building The Provider
 
 1. Clone the repository
