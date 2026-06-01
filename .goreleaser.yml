@@ -33,6 +33,12 @@ builds:
         goarch: arm
       - goos: windows
         goarch: arm
+      - goos: windows
+        goarch: arm
+        goarm: '6'
+      - goos: windows
+        goarch: arm
+        goarm: '7'
       - goos: solaris
         goarch: arm
       - goos: solaris
