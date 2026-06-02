@@ -113,7 +113,7 @@ func (c *Client) UpdatePerson(id string, person UpdatePersonRequest) (*Person, e
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s/people/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/people/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}

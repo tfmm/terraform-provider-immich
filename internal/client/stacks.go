@@ -92,7 +92,7 @@ func (c *Client) UpdateStack(id string, stack UpdateStackRequest) (*Stack, error
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
