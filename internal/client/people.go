@@ -16,6 +16,13 @@ type Person struct {
 	IsFavorite    bool   `json:"isFavorite"`
 }
 
+type CreatePersonRequest struct {
+	Name       string `json:"name"`
+	BirthDate  string `json:"birthDate,omitempty"`
+	IsHidden   bool   `json:"isHidden,omitempty"`
+	IsFavorite bool   `json:"isFavorite,omitempty"`
+}
+
 type UpdatePersonRequest struct {
 	Name       string `json:"name,omitempty"`
 	BirthDate  string `json:"birthDate,omitempty"`
@@ -73,6 +80,31 @@ func (c *Client) GetPerson(id string) (*Person, error) {
 	}
 
 	return &person, nil
+}
+
+func (c *Client) CreatePerson(person CreatePersonRequest) (*Person, error) {
+	rb, err := json.Marshal(person)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/people", c.HostURL), bytes.NewBuffer(rb))
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.doRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var newPerson Person
+	err = json.Unmarshal(body, &newPerson)
+	if err != nil {
+		return nil, err
+	}
+
+	return &newPerson, nil
 }
 
 func (c *Client) UpdatePerson(id string, person UpdatePersonRequest) (*Person, error) {

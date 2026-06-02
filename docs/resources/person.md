@@ -3,18 +3,17 @@
 page_title: "immich_person Resource - immich"
 subcategory: ""
 description: |-
-  Manages an Immich person. Note: Persons are usually created automatically by Immich facial recognition. This resource is used to update their details.
+  Manages an Immich person. Note: Persons are usually created automatically by Immich facial recognition. This resource can be used to update their details or manually create a new person.
 ---
 
 # immich_person (Resource)
 
-Manages an Immich person. Note: Persons are usually created automatically by Immich facial recognition. This resource is used to update their details.
+Manages an Immich person. Note: Persons are usually created automatically by Immich facial recognition. This resource can be used to update their details or manually create a new person.
 
 ## Example Usage
 
 ```terraform
 resource "immich_person" "example" {
-  id         = "your-person-uuid"
   name       = "John Doe"
   birth_date = "1990-01-01"
   is_hidden  = false
@@ -27,14 +26,14 @@ resource "immich_person" "example" {
 
 ### Required
 
-- `id` (String) Unique identifier for the person.
+- `name` (String) Name of the person.
 
 ### Optional
 
 - `birth_date` (String) Birth date of the person (ISO 8601).
+- `id` (String) Unique identifier for the person.
 - `is_favorite` (Boolean) Whether the person is marked as a favorite.
 - `is_hidden` (Boolean) Whether the person is hidden from the UI.
-- `name` (String) Name of the person.
 
 ## Import
 

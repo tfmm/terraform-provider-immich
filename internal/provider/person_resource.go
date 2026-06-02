@@ -42,19 +42,19 @@ func (r *personResource) Metadata(ctx context.Context, req resource.MetadataRequ
 
 func (r *personResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages an Immich person. Note: Persons are usually created automatically by Immich facial recognition. This resource is used to update their details.",
+		MarkdownDescription: "Manages an Immich person. Note: Persons are usually created automatically by Immich facial recognition. This resource can be used to update their details or manually create a new person.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Required:            true,
+				Computed:            true,
+				Optional:            true,
 				MarkdownDescription: "Unique identifier for the person.",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Optional:            true,
-				Computed:            true,
+				Required:            true,
 				MarkdownDescription: "Name of the person.",
 			},
 			"birth_date": schema.StringAttribute{
@@ -98,8 +98,6 @@ func (r *personResource) Configure(ctx context.Context, req resource.ConfigureRe
 }
 
 func (r *personResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Persons are not created via POST /people, but usually discovered.
-	// We'll treat Create as an Update if the person exists.
 	var data personResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -108,22 +106,49 @@ func (r *personResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	isHidden := data.IsHidden.ValueBool()
-	isFavorite := data.IsFavorite.ValueBool()
+	// If ID is provided, we treat it as an Update (to support managing existing without import if needed, 
+	// though not idiomatic)
+	if !data.ID.IsNull() && !data.ID.IsUnknown() {
+		isHidden := data.IsHidden.ValueBool()
+		isFavorite := data.IsFavorite.ValueBool()
 
-	updateReq := client.UpdatePersonRequest{
-		Name:       data.Name.ValueString(),
-		BirthDate:  data.BirthDate.ValueString(),
-		IsHidden:   &isHidden,
-		IsFavorite: &isFavorite,
-	}
+		updateReq := client.UpdatePersonRequest{
+			Name:       data.Name.ValueString(),
+			BirthDate:  data.BirthDate.ValueString(),
+			IsHidden:   &isHidden,
+			IsFavorite: &isFavorite,
+		}
 
-	person, err := r.client.UpdatePerson(data.ID.ValueString(), updateReq)
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update person, got error: %s", err))
+		person, err := r.client.UpdatePerson(data.ID.ValueString(), updateReq)
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update person, got error: %s", err))
+			return
+		}
+
+		data.Name = types.StringValue(person.Name)
+		data.BirthDate = types.StringValue(person.BirthDate)
+		data.IsHidden = types.BoolValue(person.IsHidden)
+		data.IsFavorite = types.BoolValue(person.IsFavorite)
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 		return
 	}
 
+	// Otherwise, create a new person
+	createReq := client.CreatePersonRequest{
+		Name:       data.Name.ValueString(),
+		BirthDate:  data.BirthDate.ValueString(),
+		IsHidden:   data.IsHidden.ValueBool(),
+		IsFavorite: data.IsFavorite.ValueBool(),
+	}
+
+	person, err := r.client.CreatePerson(createReq)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create person, got error: %s", err))
+		return
+	}
+
+	data.ID = types.StringValue(person.ID)
 	data.Name = types.StringValue(person.Name)
 	data.BirthDate = types.StringValue(person.BirthDate)
 	data.IsHidden = types.BoolValue(person.IsHidden)
@@ -189,7 +214,6 @@ func (r *personResource) Update(ctx context.Context, req resource.UpdateRequest,
 }
 
 func (r *personResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// Deleting a person in Immich usually just removes the person record, faces remain.
 	var data personResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
