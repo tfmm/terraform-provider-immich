@@ -389,42 +389,78 @@ func (r *systemConfigResource) mapModelToClient(model systemConfigResourceModel,
 		if config.PasswordLogin == nil {
 			config.PasswordLogin = make(map[string]interface{})
 		}
-		config.PasswordLogin["enabled"] = model.PasswordLogin.Enabled.ValueBool()
+		if !model.PasswordLogin.Enabled.IsNull() {
+			config.PasswordLogin["enabled"] = model.PasswordLogin.Enabled.ValueBool()
+		}
 	}
 
 	if model.OAuth != nil {
 		if config.OAuth == nil {
 			config.OAuth = make(map[string]interface{})
 		}
-		config.OAuth["enabled"] = model.OAuth.Enabled.ValueBool()
-		config.OAuth["issuerUrl"] = model.OAuth.IssuerUrl.ValueString()
-		config.OAuth["clientId"] = model.OAuth.ClientId.ValueString()
-		config.OAuth["clientSecret"] = model.OAuth.ClientSecret.ValueString()
-		config.OAuth["scope"] = model.OAuth.Scope.ValueString()
-		config.OAuth["buttonText"] = model.OAuth.ButtonText.ValueString()
-		config.OAuth["autoLaunch"] = model.OAuth.AutoLaunch.ValueBool()
-		config.OAuth["autoRegister"] = model.OAuth.AutoRegister.ValueBool()
-		config.OAuth["mobileOverrideUrl"] = model.OAuth.MobileOverrideUrl.ValueString()
-		config.OAuth["mobileRedirectUri"] = model.OAuth.MobileRedirectUri.ValueString()
-		config.OAuth["signingAlgorithm"] = model.OAuth.SigningAlgorithm.ValueString()
-		config.OAuth["defaultStorageQuota"] = model.OAuth.DefaultStorageQuota.ValueInt64()
+		if !model.OAuth.Enabled.IsNull() {
+			config.OAuth["enabled"] = model.OAuth.Enabled.ValueBool()
+		}
+		if !model.OAuth.IssuerUrl.IsNull() {
+			config.OAuth["issuerUrl"] = model.OAuth.IssuerUrl.ValueString()
+		}
+		if !model.OAuth.ClientId.IsNull() {
+			config.OAuth["clientId"] = model.OAuth.ClientId.ValueString()
+		}
+		if !model.OAuth.ClientSecret.IsNull() {
+			config.OAuth["clientSecret"] = model.OAuth.ClientSecret.ValueString()
+		}
+		if !model.OAuth.Scope.IsNull() {
+			config.OAuth["scope"] = model.OAuth.Scope.ValueString()
+		}
+		if !model.OAuth.ButtonText.IsNull() {
+			config.OAuth["buttonText"] = model.OAuth.ButtonText.ValueString()
+		}
+		if !model.OAuth.AutoLaunch.IsNull() {
+			config.OAuth["autoLaunch"] = model.OAuth.AutoLaunch.ValueBool()
+		}
+		if !model.OAuth.AutoRegister.IsNull() {
+			config.OAuth["autoRegister"] = model.OAuth.AutoRegister.ValueBool()
+		}
+		if !model.OAuth.MobileOverrideUrl.IsNull() {
+			config.OAuth["mobileOverrideUrl"] = model.OAuth.MobileOverrideUrl.ValueString()
+		}
+		if !model.OAuth.MobileRedirectUri.IsNull() {
+			config.OAuth["mobileRedirectUri"] = model.OAuth.MobileRedirectUri.ValueString()
+		}
+		if !model.OAuth.SigningAlgorithm.IsNull() {
+			config.OAuth["signingAlgorithm"] = model.OAuth.SigningAlgorithm.ValueString()
+		}
+		if !model.OAuth.DefaultStorageQuota.IsNull() {
+			config.OAuth["defaultStorageQuota"] = model.OAuth.DefaultStorageQuota.ValueInt64()
+		}
 	}
 
 	if model.StorageTemplate != nil {
 		if config.StorageTemplate == nil {
 			config.StorageTemplate = make(map[string]interface{})
 		}
-		config.StorageTemplate["template"] = model.StorageTemplate.Template.ValueString()
+		if !model.StorageTemplate.Template.IsNull() {
+			config.StorageTemplate["template"] = model.StorageTemplate.Template.ValueString()
+		}
 	}
 
 	if model.MachineLearning != nil {
 		if config.MachineLearning == nil {
 			config.MachineLearning = make(map[string]interface{})
 		}
-		config.MachineLearning["enabled"] = model.MachineLearning.Enabled.ValueBool()
-		config.MachineLearning["url"] = model.MachineLearning.URL.ValueString()
-		config.MachineLearning["clipModel"] = model.MachineLearning.ClipModel.ValueString()
-		config.MachineLearning["facialRecognitionModel"] = model.MachineLearning.FacialRecognitionModel.ValueString()
+		if !model.MachineLearning.Enabled.IsNull() {
+			config.MachineLearning["enabled"] = model.MachineLearning.Enabled.ValueBool()
+		}
+		if !model.MachineLearning.URL.IsNull() {
+			config.MachineLearning["url"] = model.MachineLearning.URL.ValueString()
+		}
+		if !model.MachineLearning.ClipModel.IsNull() {
+			config.MachineLearning["clipModel"] = model.MachineLearning.ClipModel.ValueString()
+		}
+		if !model.MachineLearning.FacialRecognitionModel.IsNull() {
+			config.MachineLearning["facialRecognitionModel"] = model.MachineLearning.FacialRecognitionModel.ValueString()
+		}
 	}
 
 	if model.Notifications != nil {
@@ -433,17 +469,35 @@ func (r *systemConfigResource) mapModelToClient(model systemConfigResourceModel,
 		}
 		if model.Notifications.SMTP != nil {
 			smtp := make(map[string]interface{})
-			smtp["enabled"] = model.Notifications.SMTP.Enabled.ValueBool()
-			smtp["from"] = model.Notifications.SMTP.From.ValueString()
-			smtp["replyTo"] = model.Notifications.SMTP.ReplyTo.ValueString()
+			if !model.Notifications.SMTP.Enabled.IsNull() {
+				smtp["enabled"] = model.Notifications.SMTP.Enabled.ValueBool()
+			}
+			if !model.Notifications.SMTP.From.IsNull() {
+				smtp["from"] = model.Notifications.SMTP.From.ValueString()
+			}
+			if !model.Notifications.SMTP.ReplyTo.IsNull() {
+				smtp["replyTo"] = model.Notifications.SMTP.ReplyTo.ValueString()
+			}
 
 			transport := make(map[string]interface{})
-			transport["host"] = model.Notifications.SMTP.Host.ValueString()
-			transport["port"] = model.Notifications.SMTP.Port.ValueInt64()
-			transport["username"] = model.Notifications.SMTP.Username.ValueString()
-			transport["password"] = model.Notifications.SMTP.Password.ValueString()
-			transport["secure"] = model.Notifications.SMTP.Secure.ValueBool()
-			transport["ignoreCert"] = model.Notifications.SMTP.IgnoreCert.ValueBool()
+			if !model.Notifications.SMTP.Host.IsNull() {
+				transport["host"] = model.Notifications.SMTP.Host.ValueString()
+			}
+			if !model.Notifications.SMTP.Port.IsNull() {
+				transport["port"] = model.Notifications.SMTP.Port.ValueInt64()
+			}
+			if !model.Notifications.SMTP.Username.IsNull() {
+				transport["username"] = model.Notifications.SMTP.Username.ValueString()
+			}
+			if !model.Notifications.SMTP.Password.IsNull() {
+				transport["password"] = model.Notifications.SMTP.Password.ValueString()
+			}
+			if !model.Notifications.SMTP.Secure.IsNull() {
+				transport["secure"] = model.Notifications.SMTP.Secure.ValueBool()
+			}
+			if !model.Notifications.SMTP.IgnoreCert.IsNull() {
+				transport["ignoreCert"] = model.Notifications.SMTP.IgnoreCert.ValueBool()
+			}
 
 			smtp["transport"] = transport
 			config.Notifications["smtp"] = smtp
@@ -456,9 +510,15 @@ func (r *systemConfigResource) mapModelToClient(model systemConfigResourceModel,
 		}
 		if model.Templates.Email != nil {
 			email := make(map[string]interface{})
-			email["albumInviteTemplate"] = model.Templates.Email.AlbumInviteTemplate.ValueString()
-			email["albumUpdateTemplate"] = model.Templates.Email.AlbumUpdateTemplate.ValueString()
-			email["welcomeTemplate"] = model.Templates.Email.WelcomeTemplate.ValueString()
+			if !model.Templates.Email.AlbumInviteTemplate.IsNull() {
+				email["albumInviteTemplate"] = model.Templates.Email.AlbumInviteTemplate.ValueString()
+			}
+			if !model.Templates.Email.AlbumUpdateTemplate.IsNull() {
+				email["albumUpdateTemplate"] = model.Templates.Email.AlbumUpdateTemplate.ValueString()
+			}
+			if !model.Templates.Email.WelcomeTemplate.IsNull() {
+				email["welcomeTemplate"] = model.Templates.Email.WelcomeTemplate.ValueString()
+			}
 			config.Templates["email"] = email
 		}
 	}

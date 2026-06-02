@@ -46,7 +46,7 @@ resource "immich_system_config" "example" {
       username = "user@example.com"
       password = "secure-smtp-password"
       from     = "immich@example.com"
-      secure   = true
+      secure   = false
     }
   }
 
