@@ -22,7 +22,9 @@ func NewClient(host, token string) *Client {
 
 func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("x-api-key", c.Token)
-	req.Header.Set("Content-Type", "application/json")
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {

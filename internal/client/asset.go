@@ -4,7 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 type Asset struct {
@@ -155,4 +160,58 @@ func (c *Client) SearchAssets(search SearchAssetsRequest) (*SearchAssetsResponse
 	}
 
 	return &response, nil
+}
+
+func (c *Client) UploadAsset(filePath string, deviceId, deviceAssetId string, fileCreatedAt, fileModifiedAt time.Time, isFavorite bool) (*Asset, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("assetData", filepath.Base(filePath))
+	if err != nil {
+		return nil, err
+	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = writer.WriteField("deviceId", deviceId)
+	_ = writer.WriteField("deviceAssetId", deviceAssetId)
+	_ = writer.WriteField("fileCreatedAt", fileCreatedAt.Format(time.RFC3339))
+	_ = writer.WriteField("fileModifiedAt", fileModifiedAt.Format(time.RFC3339))
+	if isFavorite {
+		_ = writer.WriteField("isFavorite", "true")
+	} else {
+		_ = writer.WriteField("isFavorite", "false")
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/assets", c.HostURL), body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resBody, err := c.doRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var asset Asset
+	err = json.Unmarshal(resBody, &asset)
+	if err != nil {
+		return nil, err
+	}
+
+	return &asset, nil
 }
