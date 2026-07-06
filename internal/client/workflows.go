@@ -35,7 +35,7 @@ type UpdateWorkflowRequest struct {
 }
 
 func (c *Client) GetWorkflows() ([]Workflow, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/workflow", c.HostURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/workflows", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (c *Client) GetWorkflows() ([]Workflow, error) {
 }
 
 func (c *Client) GetWorkflow(id string) (*Workflow, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/workflow/%s", c.HostURL, id), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (c *Client) CreateWorkflow(workflow CreateWorkflowRequest) (*Workflow, erro
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/workflow", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/workflows", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (c *Client) UpdateWorkflow(id string, workflow UpdateWorkflowRequest) (*Wor
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/workflow/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (c *Client) UpdateWorkflow(id string, workflow UpdateWorkflowRequest) (*Wor
 }
 
 func (c *Client) DeleteWorkflow(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/workflow/%s", c.HostURL, id), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

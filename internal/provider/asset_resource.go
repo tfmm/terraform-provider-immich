@@ -71,6 +71,7 @@ func (r *assetResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Optional:            true,
 				Computed:            true,
 				MarkdownDescription: "Unique identifier for the device/client. Defaults to 'terraform'.",
+				DeprecationMessage:  "This field has been removed in Immich v3.0.0 and is ignored.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -79,6 +80,7 @@ func (r *assetResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Optional:            true,
 				Computed:            true,
 				MarkdownDescription: "Unique identifier for the asset on the device. Defaults to the filename.",
+				DeprecationMessage:  "This field has been removed in Immich v3.0.0 and is ignored.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -158,14 +160,6 @@ func (r *assetResource) Create(ctx context.Context, req resource.CreateRequest, 
 
 	if !data.Filename.IsNull() {
 		filename := data.Filename.ValueString()
-		deviceId := "terraform"
-		if !data.DeviceId.IsNull() {
-			deviceId = data.DeviceId.ValueString()
-		}
-		deviceAssetId := filepath.Base(filename)
-		if !data.DeviceAssetId.IsNull() {
-			deviceAssetId = data.DeviceAssetId.ValueString()
-		}
 
 		fileCreatedAt := time.Now()
 		if !data.FileCreatedAt.IsNull() {
@@ -192,17 +186,23 @@ func (r *assetResource) Create(ctx context.Context, req resource.CreateRequest, 
 			isFavorite = data.IsFavorite.ValueBool()
 		}
 
-		asset, err := r.client.UploadAsset(filename, deviceId, deviceAssetId, fileCreatedAt, fileModifiedAt, isFavorite)
+		asset, err := r.client.UploadAsset(filename, fileCreatedAt, fileModifiedAt, isFavorite)
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to upload asset, got error: %s", err))
 			return
 		}
 
 		data.ID = types.StringValue(asset.ID)
-		data.DeviceId = types.StringValue(asset.DeviceId)
-		data.DeviceAssetId = types.StringValue(asset.DeviceAssetId)
 		data.FileCreatedAt = types.StringValue(asset.FileCreatedAt)
 		data.FileModifiedAt = types.StringValue(asset.FileModifiedAt)
+
+		// Maintain plan value or defaults for deprecated attributes
+		if data.DeviceId.IsNull() || data.DeviceId.IsUnknown() {
+			data.DeviceId = types.StringValue("terraform")
+		}
+		if data.DeviceAssetId.IsNull() || data.DeviceAssetId.IsUnknown() {
+			data.DeviceAssetId = types.StringValue(filepath.Base(filename))
+		}
 	}
 
 	if data.ID.IsNull() {
@@ -269,10 +269,16 @@ func (r *assetResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	data.IsFavorite = types.BoolValue(asset.IsFavorite)
 	data.IsArchived = types.BoolValue(asset.IsArchived)
 	data.Description = types.StringValue(asset.Description)
-	data.DeviceId = types.StringValue(asset.DeviceId)
-	data.DeviceAssetId = types.StringValue(asset.DeviceAssetId)
 	data.FileCreatedAt = types.StringValue(asset.FileCreatedAt)
 	data.FileModifiedAt = types.StringValue(asset.FileModifiedAt)
+
+	// Preserve deprecated attributes from state to prevent plan drift
+	if data.DeviceId.IsNull() || data.DeviceId.IsUnknown() {
+		data.DeviceId = types.StringNull()
+	}
+	if data.DeviceAssetId.IsNull() || data.DeviceAssetId.IsUnknown() {
+		data.DeviceAssetId = types.StringNull()
+	}
 
 	if asset.ExifInfo != nil {
 		data.Latitude = types.Float64Value(asset.ExifInfo.Latitude)

@@ -8,23 +8,27 @@ import (
 )
 
 type Tag struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Type      string `json:"type"` // OBJECT or USER
-	// Color  string `json:"color,omitempty"`
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Color     *string `json:"color,omitempty"`
+	ParentId  *string `json:"parentId,omitempty"`
+	CreatedAt string  `json:"createdAt"`
+	UpdatedAt string  `json:"updatedAt"`
+	Value     string  `json:"value"`
 }
 
 type CreateTagRequest struct {
-	Name string `json:"name"`
-	Type string `json:"type"` // OBJECT or USER
+	Name     string  `json:"name"`
+	Color    *string `json:"color,omitempty"`
+	ParentId *string `json:"parentId,omitempty"`
 }
 
 type UpdateTagRequest struct {
-	Name string `json:"name"`
+	Color *string `json:"color,omitempty"`
 }
 
 func (c *Client) GetTags() ([]Tag, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tag", c.HostURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tags", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +48,7 @@ func (c *Client) GetTags() ([]Tag, error) {
 }
 
 func (c *Client) GetTag(id string) (*Tag, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tag/%s", c.HostURL, id), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tags/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +73,7 @@ func (c *Client) CreateTag(tag CreateTagRequest) (*Tag, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/tag", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/tags", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +98,7 @@ func (c *Client) UpdateTag(id string, tag UpdateTagRequest) (*Tag, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s/tag/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/tags/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +118,7 @@ func (c *Client) UpdateTag(id string, tag UpdateTagRequest) (*Tag, error) {
 }
 
 func (c *Client) DeleteTag(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/tag/%s", c.HostURL, id), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/tags/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

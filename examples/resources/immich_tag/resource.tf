@@ -1,4 +1,4 @@
 resource "immich_tag" "example" {
-  name = "Vacation"
-  type = "OBJECT"
+  name  = "Vacation"
+  color = "#FF0000"
 }

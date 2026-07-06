@@ -36,7 +36,7 @@ type UpdateLibraryRequest struct {
 }
 
 func (c *Client) GetLibraries() ([]Library, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/library", c.HostURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/libraries", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *Client) GetLibraries() ([]Library, error) {
 }
 
 func (c *Client) GetLibrary(id string) (*Library, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/library/%s", c.HostURL, id), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (c *Client) CreateLibrary(library CreateLibraryRequest) (*Library, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/library", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/libraries", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *Client) UpdateLibrary(id string, library UpdateLibraryRequest) (*Librar
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/library/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (c *Client) UpdateLibrary(id string, library UpdateLibraryRequest) (*Librar
 }
 
 func (c *Client) DeleteLibrary(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/library/%s", c.HostURL, id), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

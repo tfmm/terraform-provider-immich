@@ -14,9 +14,7 @@ import (
 
 type Asset struct {
 	ID               string   `json:"id"`
-	DeviceAssetId    string   `json:"deviceAssetId"`
 	OwnerId          string   `json:"ownerId"`
-	DeviceId         string   `json:"deviceId"`
 	Type             string   `json:"type"` // IMAGE or VIDEO
 	OriginalFileName string   `json:"originalFileName"`
 	FileCreatedAt    string   `json:"fileCreatedAt"`
@@ -162,7 +160,7 @@ func (c *Client) SearchAssets(search SearchAssetsRequest) (*SearchAssetsResponse
 	return &response, nil
 }
 
-func (c *Client) UploadAsset(filePath string, deviceId, deviceAssetId string, fileCreatedAt, fileModifiedAt time.Time, isFavorite bool) (*Asset, error) {
+func (c *Client) UploadAsset(filePath string, fileCreatedAt, fileModifiedAt time.Time, isFavorite bool) (*Asset, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -181,8 +179,6 @@ func (c *Client) UploadAsset(filePath string, deviceId, deviceAssetId string, fi
 		return nil, err
 	}
 
-	_ = writer.WriteField("deviceId", deviceId)
-	_ = writer.WriteField("deviceAssetId", deviceAssetId)
 	_ = writer.WriteField("fileCreatedAt", fileCreatedAt.Format(time.RFC3339))
 	_ = writer.WriteField("fileModifiedAt", fileModifiedAt.Format(time.RFC3339))
 	if isFavorite {

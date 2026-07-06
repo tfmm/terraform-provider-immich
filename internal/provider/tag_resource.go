@@ -28,9 +28,10 @@ type tagResource struct {
 
 // tagResourceModel describes the resource data model.
 type tagResourceModel struct {
-	ID   types.String `tfsdk:"id"`
-	Name types.String `tfsdk:"name"`
-	Type types.String `tfsdk:"type"`
+	ID       types.String `tfsdk:"id"`
+	Name     types.String `tfsdk:"name"`
+	Color    types.String `tfsdk:"color"`
+	ParentId types.String `tfsdk:"parent_id"`
 }
 
 func (r *tagResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -52,10 +53,17 @@ func (r *tagResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 			"name": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "Name of the tag.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"type": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "Type of the tag (OBJECT or USER).",
+			"color": schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Hex color code for the tag.",
+			},
+			"parent_id": schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Optional parent tag ID.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -94,7 +102,16 @@ func (r *tagResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 	createReq := client.CreateTagRequest{
 		Name: data.Name.ValueString(),
-		Type: data.Type.ValueString(),
+	}
+
+	if !data.Color.IsNull() && !data.Color.IsUnknown() {
+		color := data.Color.ValueString()
+		createReq.Color = &color
+	}
+
+	if !data.ParentId.IsNull() && !data.ParentId.IsUnknown() {
+		parentId := data.ParentId.ValueString()
+		createReq.ParentId = &parentId
 	}
 
 	tag, err := r.client.CreateTag(createReq)
@@ -104,6 +121,8 @@ func (r *tagResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	data.ID = types.StringValue(tag.ID)
+	data.Color = types.StringPointerValue(tag.Color)
+	data.ParentId = types.StringPointerValue(tag.ParentId)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -124,7 +143,8 @@ func (r *tagResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	}
 
 	data.Name = types.StringValue(tag.Name)
-	data.Type = types.StringValue(tag.Type)
+	data.Color = types.StringPointerValue(tag.Color)
+	data.ParentId = types.StringPointerValue(tag.ParentId)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -138,8 +158,11 @@ func (r *tagResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	updateReq := client.UpdateTagRequest{
-		Name: data.Name.ValueString(),
+	updateReq := client.UpdateTagRequest{}
+
+	if !data.Color.IsNull() && !data.Color.IsUnknown() {
+		color := data.Color.ValueString()
+		updateReq.Color = &color
 	}
 
 	_, err := r.client.UpdateTag(data.ID.ValueString(), updateReq)

@@ -13,11 +13,19 @@ Manages an Immich asset. Supports uploading a file or managing metadata of an ex
 ## Example Usage
 
 ```terraform
-resource "immich_asset" "example" {
-  id          = "your-asset-uuid"
+# Upload an asset from a local file
+resource "immich_asset" "upload_example" {
+  filename    = "path/to/your/photo.jpg"
+  description = "Uploaded via Terraform"
+  is_favorite = true
+}
+
+# Manage metadata of an existing asset
+resource "immich_asset" "metadata_example" {
+  id          = "existing-asset-uuid"
   is_favorite = true
   is_archived = false
-  description = "A beautiful sunset"
+  description = "Updated description"
 }
 ```
 
@@ -27,8 +35,8 @@ resource "immich_asset" "example" {
 ### Optional
 
 - `description` (String) Description of the asset.
-- `device_asset_id` (String) Unique identifier for the asset on the device. Defaults to the filename.
-- `device_id` (String) Unique identifier for the device/client. Defaults to 'terraform'.
+- `device_asset_id` (String, Deprecated) Unique identifier for the asset on the device. Defaults to the filename.
+- `device_id` (String, Deprecated) Unique identifier for the device/client. Defaults to 'terraform'.
 - `file_created_at` (String) ISO 8601 timestamp of when the file was created. Defaults to the current time.
 - `file_modified_at` (String) ISO 8601 timestamp of when the file was last modified. Defaults to the current time.
 - `filename` (String) Path to the local file to upload. If provided, the asset will be uploaded to Immich.

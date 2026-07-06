@@ -14,8 +14,8 @@ Manages an Immich tag.
 
 ```terraform
 resource "immich_tag" "example" {
-  name = "Vacation"
-  type = "OBJECT"
+  name  = "Vacation"
+  color = "#FF0000"
 }
 ```
 
@@ -25,7 +25,11 @@ resource "immich_tag" "example" {
 ### Required
 
 - `name` (String) Name of the tag.
-- `type` (String) Type of the tag (OBJECT or USER).
+
+### Optional
+
+- `color` (String) Hex color code for the tag.
+- `parent_id` (String) Optional parent tag ID.
 
 ### Read-Only
 
