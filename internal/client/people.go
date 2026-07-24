@@ -8,26 +8,26 @@ import (
 )
 
 type Person struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	BirthDate     string `json:"birthDate,omitempty"`
-	ThumbnailPath string `json:"thumbnailPath,omitempty"`
-	IsHidden      bool   `json:"isHidden"`
-	IsFavorite    bool   `json:"isFavorite"`
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	BirthDate     *string `json:"birthDate,omitempty"`
+	ThumbnailPath string  `json:"thumbnailPath,omitempty"`
+	IsHidden      bool    `json:"isHidden"`
+	IsFavorite    bool    `json:"isFavorite"`
 }
 
 type CreatePersonRequest struct {
-	Name       string `json:"name"`
-	BirthDate  string `json:"birthDate,omitempty"`
-	IsHidden   bool   `json:"isHidden,omitempty"`
-	IsFavorite bool   `json:"isFavorite,omitempty"`
+	Name       string  `json:"name"`
+	BirthDate  *string `json:"birthDate,omitempty"`
+	IsHidden   bool    `json:"isHidden,omitempty"`
+	IsFavorite bool    `json:"isFavorite,omitempty"`
 }
 
 type UpdatePersonRequest struct {
-	Name       string `json:"name,omitempty"`
-	BirthDate  string `json:"birthDate,omitempty"`
-	IsHidden   *bool  `json:"isHidden,omitempty"`
-	IsFavorite *bool  `json:"isFavorite,omitempty"`
+	Name       string  `json:"name,omitempty"`
+	BirthDate  *string `json:"birthDate,omitempty"`
+	IsHidden   *bool   `json:"isHidden,omitempty"`
+	IsFavorite *bool   `json:"isFavorite,omitempty"`
 }
 
 func (c *Client) GetPeople(withHidden bool) ([]Person, error) {
