@@ -126,6 +126,37 @@ func (r *albumResource) Configure(ctx context.Context, req resource.ConfigureReq
 	r.client = client
 }
 
+func updateAlbumResourceModel(data *albumResourceModel, album *client.Album) {
+	data.ID = types.StringValue(album.ID)
+	data.Name = types.StringValue(album.AlbumName)
+
+	if album.Description != nil && *album.Description != "" {
+		data.Description = types.StringValue(*album.Description)
+	} else {
+		data.Description = types.StringNull()
+	}
+
+	data.AlbumThumbnailAssetId = types.StringPointerValue(album.AlbumThumbnailAssetId)
+	data.IsActivityEnabled = types.BoolValue(album.IsActivityEnabled)
+
+	if album.Order != "" {
+		data.Order = types.StringValue(album.Order)
+	} else {
+		data.Order = types.StringNull()
+	}
+
+	var users []albumUserModel
+	for _, u := range album.AlbumUsers {
+		if u.User != nil {
+			users = append(users, albumUserModel{
+				UserId: types.StringValue(u.User.ID),
+				Role:   types.StringValue(u.Role),
+			})
+		}
+	}
+	data.Users = users
+}
+
 func (r *albumResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data albumResourceModel
 
@@ -135,9 +166,15 @@ func (r *albumResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
+	var desc *string
+	if !data.Description.IsNull() && !data.Description.IsUnknown() {
+		d := data.Description.ValueString()
+		desc = &d
+	}
+
 	createReq := client.CreateAlbumRequest{
 		AlbumName:   data.Name.ValueString(),
-		Description: data.Description.ValueString(),
+		Description: desc,
 	}
 
 	for _, u := range data.Users {
@@ -157,7 +194,7 @@ func (r *albumResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	data.ID = types.StringValue(album.ID)
+	updateAlbumResourceModel(&data, album)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -177,24 +214,7 @@ func (r *albumResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	data.Name = types.StringValue(album.AlbumName)
-	data.Description = types.StringValue(album.Description)
-	data.AlbumThumbnailAssetId = types.StringPointerValue(album.AlbumThumbnailAssetId)
-	data.IsActivityEnabled = types.BoolValue(album.IsActivityEnabled)
-	data.Order = types.StringValue(album.Order)
-
-	var users []albumUserModel
-	for _, u := range album.AlbumUsers {
-		users = append(users, albumUserModel{
-			UserId: types.StringValue(u.User.ID),
-			Role:   types.StringValue(u.Role),
-		})
-	}
-	data.Users = users
-
-	// Note: asset_ids are not fully returned in AlbumResponseDto, only assetCount.
-	// To get all asset IDs, one would need to call another endpoint or the API should return them.
-	// For now, we'll keep what's in state for asset_ids or mark them as computed if we can't reliably read them back.
+	updateAlbumResourceModel(&data, album)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -209,9 +229,18 @@ func (r *albumResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
+	var desc *string
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		d := plan.Description.ValueString()
+		desc = &d
+	} else if plan.Description.IsNull() {
+		empty := ""
+		desc = &empty
+	}
+
 	updateReq := client.UpdateAlbumRequest{
 		AlbumName:             plan.Name.ValueString(),
-		Description:           plan.Description.ValueString(),
+		Description:           desc,
 		AlbumThumbnailAssetId: plan.AlbumThumbnailAssetId.ValueStringPointer(),
 		Order:                 plan.Order.ValueString(),
 	}
@@ -221,22 +250,13 @@ func (r *albumResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		updateReq.IsActivityEnabled = &enabled
 	}
 
-	_, err := r.client.UpdateAlbum(plan.ID.ValueString(), updateReq)
+	album, err := r.client.UpdateAlbum(plan.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update album info, got error: %s", err))
 		return
 	}
 
-	// Update Users
-	// This is a bit complex: we need to find diffs and call AddUsers, UpdateRole, or RemoveUser.
-	// For simplicity in this first version, we'll skip complex diffing or just implement a basic version.
-	// Better yet, let's just implement the metadata for now and maybe users/assets as separate resources if it gets too complex.
-	// But the user asked for Albums API, so I'll try to do a decent job.
-
-	// Simple user sync (Remove all then add all is NOT supported by API as "Set", it's Add or Remove).
-	// We should diff plan.Users vs state.Users.
-
-	// Skip complex user/asset sync for now to keep the example manageable, but I'll add a TODO.
+	updateAlbumResourceModel(&plan, album)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

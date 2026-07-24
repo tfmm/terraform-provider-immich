@@ -103,7 +103,7 @@ func (d *albumsDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		albumState := albumsModel{
 			ID:          types.StringValue(album.ID),
 			Name:        types.StringValue(album.AlbumName),
-			Description: types.StringValue(album.Description),
+			Description: types.StringPointerValue(album.Description),
 			AssetCount:  types.Int64Value(int64(album.AssetCount)),
 		}
 		data.Albums = append(data.Albums, albumState)
