@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -97,6 +99,66 @@ func (r *personResource) Configure(ctx context.Context, req resource.ConfigureRe
 	r.client = client
 }
 
+func parseBirthDate(s string) (time.Time, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return time.Time{}, false
+	}
+
+	layouts := []string{
+		"2006-01-02",
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+	}
+
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.UTC(), true
+		}
+	}
+	return time.Time{}, false
+}
+
+func reconcileBirthDate(apiBirthDate *string, currentVal types.String) types.String {
+	if apiBirthDate == nil || strings.TrimSpace(*apiBirthDate) == "" {
+		return types.StringNull()
+	}
+
+	apiStr := strings.TrimSpace(*apiBirthDate)
+	tApi, okApi := parseBirthDate(apiStr)
+
+	if !currentVal.IsNull() && !currentVal.IsUnknown() {
+		curStr := strings.TrimSpace(currentVal.ValueString())
+		if curStr != "" {
+			if curStr == apiStr {
+				return currentVal
+			}
+
+			tCfg, okCfg := parseBirthDate(curStr)
+			if okApi && okCfg {
+				if tApi.Year() == tCfg.Year() && tApi.Month() == tCfg.Month() && tApi.Day() == tCfg.Day() {
+					return currentVal
+				}
+				if tApi.Equal(tCfg) {
+					return currentVal
+				}
+			}
+		}
+	}
+
+	if okApi {
+		if tApi.Hour() == 0 && tApi.Minute() == 0 && tApi.Second() == 0 {
+			return types.StringValue(tApi.Format("2006-01-02"))
+		}
+	}
+
+	return types.StringValue(apiStr)
+}
+
 func (r *personResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data personResourceModel
 
@@ -106,15 +168,20 @@ func (r *personResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	// If ID is provided, we treat it as an Update (to support managing existing without import if needed, 
-	// though not idiomatic)
+	var birthDate *string
+	if !data.BirthDate.IsNull() && !data.BirthDate.IsUnknown() {
+		bd := data.BirthDate.ValueString()
+		birthDate = &bd
+	}
+
+	// If ID is provided, we treat it as an Update
 	if !data.ID.IsNull() && !data.ID.IsUnknown() {
 		isHidden := data.IsHidden.ValueBool()
 		isFavorite := data.IsFavorite.ValueBool()
 
 		updateReq := client.UpdatePersonRequest{
 			Name:       data.Name.ValueString(),
-			BirthDate:  data.BirthDate.ValueString(),
+			BirthDate:  birthDate,
 			IsHidden:   &isHidden,
 			IsFavorite: &isFavorite,
 		}
@@ -126,7 +193,7 @@ func (r *personResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 
 		data.Name = types.StringValue(person.Name)
-		data.BirthDate = types.StringValue(person.BirthDate)
+		data.BirthDate = reconcileBirthDate(person.BirthDate, data.BirthDate)
 		data.IsHidden = types.BoolValue(person.IsHidden)
 		data.IsFavorite = types.BoolValue(person.IsFavorite)
 
@@ -137,7 +204,7 @@ func (r *personResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Otherwise, create a new person
 	createReq := client.CreatePersonRequest{
 		Name:       data.Name.ValueString(),
-		BirthDate:  data.BirthDate.ValueString(),
+		BirthDate:  birthDate,
 		IsHidden:   data.IsHidden.ValueBool(),
 		IsFavorite: data.IsFavorite.ValueBool(),
 	}
@@ -150,7 +217,7 @@ func (r *personResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	data.ID = types.StringValue(person.ID)
 	data.Name = types.StringValue(person.Name)
-	data.BirthDate = types.StringValue(person.BirthDate)
+	data.BirthDate = reconcileBirthDate(person.BirthDate, data.BirthDate)
 	data.IsHidden = types.BoolValue(person.IsHidden)
 	data.IsFavorite = types.BoolValue(person.IsFavorite)
 
@@ -173,7 +240,7 @@ func (r *personResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	data.Name = types.StringValue(person.Name)
-	data.BirthDate = types.StringValue(person.BirthDate)
+	data.BirthDate = reconcileBirthDate(person.BirthDate, data.BirthDate)
 	data.IsHidden = types.BoolValue(person.IsHidden)
 	data.IsFavorite = types.BoolValue(person.IsFavorite)
 
@@ -189,12 +256,21 @@ func (r *personResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
+	var birthDate *string
+	if !data.BirthDate.IsNull() && !data.BirthDate.IsUnknown() {
+		bd := data.BirthDate.ValueString()
+		birthDate = &bd
+	} else if data.BirthDate.IsNull() {
+		empty := ""
+		birthDate = &empty
+	}
+
 	isHidden := data.IsHidden.ValueBool()
 	isFavorite := data.IsFavorite.ValueBool()
 
 	updateReq := client.UpdatePersonRequest{
 		Name:       data.Name.ValueString(),
-		BirthDate:  data.BirthDate.ValueString(),
+		BirthDate:  birthDate,
 		IsHidden:   &isHidden,
 		IsFavorite: &isFavorite,
 	}
@@ -206,7 +282,7 @@ func (r *personResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	data.Name = types.StringValue(person.Name)
-	data.BirthDate = types.StringValue(person.BirthDate)
+	data.BirthDate = reconcileBirthDate(person.BirthDate, data.BirthDate)
 	data.IsHidden = types.BoolValue(person.IsHidden)
 	data.IsFavorite = types.BoolValue(person.IsFavorite)
 
@@ -232,3 +308,4 @@ func (r *personResource) Delete(ctx context.Context, req resource.DeleteRequest,
 func (r *personResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
+
