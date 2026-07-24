@@ -15,7 +15,7 @@ type AlbumUser struct {
 type Album struct {
 	ID                    string      `json:"id,omitempty"`
 	AlbumName             string      `json:"albumName"`
-	Description           string      `json:"description"`
+	Description           *string     `json:"description,omitempty"`
 	CreatedAt             string      `json:"createdAt,omitempty"`
 	UpdatedAt             string      `json:"updatedAt,omitempty"`
 	AlbumThumbnailAssetId *string     `json:"albumThumbnailAssetId"`
@@ -34,14 +34,14 @@ type AlbumUserCreate struct {
 
 type CreateAlbumRequest struct {
 	AlbumName   string            `json:"albumName"`
-	Description string            `json:"description,omitempty"`
+	Description *string           `json:"description,omitempty"`
 	AlbumUsers  []AlbumUserCreate `json:"albumUsers,omitempty"`
 	AssetIds    []string          `json:"assetIds,omitempty"`
 }
 
 type UpdateAlbumRequest struct {
 	AlbumName             string  `json:"albumName,omitempty"`
-	Description           string  `json:"description,omitempty"`
+	Description           *string `json:"description,omitempty"`
 	AlbumThumbnailAssetId *string `json:"albumThumbnailAssetId,omitempty"`
 	IsActivityEnabled     *bool   `json:"isActivityEnabled,omitempty"`
 	Order                 string  `json:"order,omitempty"`
