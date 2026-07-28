@@ -2,6 +2,8 @@
 # This file is used to automate the building and signing of the Terraform provider releases.
 # For more information, see: https://goreleaser.com/
 
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -50,7 +52,8 @@ builds:
     binary: '{{ .ProjectName }}_v{{ .Version }}'
 
 archives:
-  - format: zip
+  - formats:
+      - zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 
 checksum:
