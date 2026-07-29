@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -67,6 +68,9 @@ func (r *albumResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Optional:            true,
 				Computed:            true,
 				MarkdownDescription: "Optional description of the album.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"album_thumbnail_asset_id": schema.StringAttribute{
 				Optional:            true,
@@ -98,7 +102,7 @@ func (r *albumResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 						},
 						"role": schema.StringAttribute{
 							Required:            true,
-							MarkdownDescription: "Role granted to the user. Must be either `Editor` or `Viewer`.",
+							MarkdownDescription: "Role granted to the user. Must be either `editor` or `viewer`.",
 						},
 					},
 				},
@@ -147,14 +151,18 @@ func updateAlbumResourceModel(data *albumResourceModel, album *client.Album) {
 
 	var users []albumUserModel
 	for _, u := range album.AlbumUsers {
-		if u.User != nil {
+		if u.User != nil && !strings.EqualFold(u.Role, "owner") {
 			users = append(users, albumUserModel{
 				UserId: types.StringValue(u.User.ID),
 				Role:   types.StringValue(u.Role),
 			})
 		}
 	}
-	data.Users = users
+	if len(users) == 0 && (data.Users == nil || len(data.Users) == 0) {
+		data.Users = nil
+	} else {
+		data.Users = users
+	}
 }
 
 func (r *albumResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
