@@ -119,6 +119,12 @@ func TestReconcileBirthDate(t *testing.T) {
 			currentVal: types.StringNull(),
 			expected:   types.StringValue("1988-03-04"),
 		},
+		{
+			name:       "API date string shifted by 1 day (1988-03-03) matches YYYY-MM-DD in state (1988-03-04)",
+			apiVal:     strPtr("1988-03-03"),
+			currentVal: types.StringValue("1988-03-04"),
+			expected:   types.StringValue("1988-03-04"),
+		},
 	}
 
 	for _, tt := range tests {

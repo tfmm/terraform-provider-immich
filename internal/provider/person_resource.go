@@ -129,12 +129,6 @@ func possibleDates(s string) []string {
 		return nil
 	}
 
-	if len(s) == 10 {
-		if _, err := time.Parse("2006-01-02", s); err == nil {
-			return []string{s}
-		}
-	}
-
 	t, ok := parseBirthDate(s)
 	if !ok {
 		return []string{s}
@@ -162,7 +156,6 @@ func reconcileBirthDate(apiBirthDate *string, currentVal types.String) types.Str
 	}
 
 	apiStr := strings.TrimSpace(*apiBirthDate)
-	apiDates := possibleDates(apiStr)
 
 	if !currentVal.IsNull() && !currentVal.IsUnknown() {
 		curStr := strings.TrimSpace(currentVal.ValueString())
@@ -171,6 +164,7 @@ func reconcileBirthDate(apiBirthDate *string, currentVal types.String) types.Str
 				return currentVal
 			}
 
+			apiDates := possibleDates(apiStr)
 			curDates := possibleDates(curStr)
 			for _, c := range curDates {
 				for _, a := range apiDates {
@@ -179,9 +173,20 @@ func reconcileBirthDate(apiBirthDate *string, currentVal types.String) types.Str
 					}
 				}
 			}
+
+			// Check if apiStr is 1 day prior to curStr (due to Immich backend timezone truncation to YYYY-MM-DD)
+			tApi, okApi := parseBirthDate(apiStr)
+			tCur, okCur := parseBirthDate(curStr)
+			if okApi && okCur {
+				diff := tCur.Sub(tApi)
+				if diff > 0 && diff <= 25*time.Hour {
+					return currentVal
+				}
+			}
 		}
 	}
 
+	apiDates := possibleDates(apiStr)
 	if len(apiDates) > 0 {
 		return types.StringValue(apiDates[len(apiDates)-1])
 	}
