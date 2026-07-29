@@ -95,6 +95,30 @@ func TestReconcileBirthDate(t *testing.T) {
 			currentVal: types.StringValue("2023-06-10T00:00:00Z"),
 			expected:   types.StringValue("2023-06-10T00:00:00Z"),
 		},
+		{
+			name:       "ISO timestamp from API shifted to previous UTC day (e.g. 19:00Z) matches YYYY-MM-DD in state",
+			apiVal:     strPtr("1988-03-03T19:00:00.000Z"),
+			currentVal: types.StringValue("1988-03-04"),
+			expected:   types.StringValue("1988-03-04"),
+		},
+		{
+			name:       "ISO timestamp from API shifted to previous UTC day (e.g. 23:00Z) matches YYYY-MM-DD in state",
+			apiVal:     strPtr("1988-03-03T23:00:00.000Z"),
+			currentVal: types.StringValue("1988-03-04"),
+			expected:   types.StringValue("1988-03-04"),
+		},
+		{
+			name:       "ISO timestamp from API shifted into positive UTC hours (e.g. 05:00Z) matches YYYY-MM-DD in state",
+			apiVal:     strPtr("1988-03-04T05:00:00.000Z"),
+			currentVal: types.StringValue("1988-03-04"),
+			expected:   types.StringValue("1988-03-04"),
+		},
+		{
+			name:       "ISO timestamp from API shifted to previous UTC day (e.g. 19:00Z) when state is null resolves to target date",
+			apiVal:     strPtr("1988-03-03T19:00:00.000Z"),
+			currentVal: types.StringNull(),
+			expected:   types.StringValue("1988-03-04"),
+		},
 	}
 
 	for _, tt := range tests {
