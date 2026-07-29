@@ -62,4 +62,34 @@ func TestUpdateAlbumResourceModel(t *testing.T) {
 			t.Errorf("expected Description 'Summer 2026', got %q", model.Description.ValueString())
 		}
 	})
+
+	t.Run("owner role in albumUsers is filtered out to prevent drift", func(t *testing.T) {
+		var model albumResourceModel
+		album := &client.Album{
+			ID:        "album-123",
+			AlbumName: "Family Photos",
+			AlbumUsers: []client.AlbumUser{
+				{
+					User: &client.User{ID: "owner-id-123"},
+					Role: "owner",
+				},
+				{
+					User: &client.User{ID: "editor-id-456"},
+					Role: "editor",
+				},
+			},
+		}
+
+		updateAlbumResourceModel(&model, album)
+
+		if len(model.Users) != 1 {
+			t.Fatalf("expected 1 shared user (owner filtered), got %d", len(model.Users))
+		}
+		if model.Users[0].UserId.ValueString() != "editor-id-456" {
+			t.Errorf("expected shared user ID 'editor-id-456', got %q", model.Users[0].UserId.ValueString())
+		}
+		if model.Users[0].Role.ValueString() != "editor" {
+			t.Errorf("expected shared user role 'editor', got %q", model.Users[0].Role.ValueString())
+		}
+	})
 }
