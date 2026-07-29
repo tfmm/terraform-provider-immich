@@ -123,13 +123,39 @@ func parseBirthDate(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
+func possibleDates(s string) []string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+
+	t, ok := parseBirthDate(s)
+	if !ok {
+		return []string{s}
+	}
+
+	dates := []string{
+		t.Format("2006-01-02"),
+		t.Add(12 * time.Hour).Format("2006-01-02"),
+	}
+
+	seen := make(map[string]bool)
+	var res []string
+	for _, d := range dates {
+		if !seen[d] {
+			seen[d] = true
+			res = append(res, d)
+		}
+	}
+	return res
+}
+
 func reconcileBirthDate(apiBirthDate *string, currentVal types.String) types.String {
 	if apiBirthDate == nil || strings.TrimSpace(*apiBirthDate) == "" {
 		return types.StringNull()
 	}
 
 	apiStr := strings.TrimSpace(*apiBirthDate)
-	tApi, okApi := parseBirthDate(apiStr)
 
 	if !currentVal.IsNull() && !currentVal.IsUnknown() {
 		curStr := strings.TrimSpace(currentVal.ValueString())
@@ -138,22 +164,31 @@ func reconcileBirthDate(apiBirthDate *string, currentVal types.String) types.Str
 				return currentVal
 			}
 
-			tCfg, okCfg := parseBirthDate(curStr)
-			if okApi && okCfg {
-				if tApi.Year() == tCfg.Year() && tApi.Month() == tCfg.Month() && tApi.Day() == tCfg.Day() {
-					return currentVal
+			apiDates := possibleDates(apiStr)
+			curDates := possibleDates(curStr)
+			for _, c := range curDates {
+				for _, a := range apiDates {
+					if c == a {
+						return currentVal
+					}
 				}
-				if tApi.Equal(tCfg) {
+			}
+
+			// Check if apiStr is 1 day prior to curStr (due to Immich backend timezone truncation to YYYY-MM-DD)
+			tApi, okApi := parseBirthDate(apiStr)
+			tCur, okCur := parseBirthDate(curStr)
+			if okApi && okCur {
+				diff := tCur.Sub(tApi)
+				if diff > 0 && diff <= 25*time.Hour {
 					return currentVal
 				}
 			}
 		}
 	}
 
-	if okApi {
-		if tApi.Hour() == 0 && tApi.Minute() == 0 && tApi.Second() == 0 {
-			return types.StringValue(tApi.Format("2006-01-02"))
-		}
+	apiDates := possibleDates(apiStr)
+	if len(apiDates) > 0 {
+		return types.StringValue(apiDates[len(apiDates)-1])
 	}
 
 	return types.StringValue(apiStr)
