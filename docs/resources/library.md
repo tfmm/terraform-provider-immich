@@ -57,7 +57,7 @@ resource "immich_library" "upload" {
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -69,5 +69,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_library.example 5678-abcd-1234
+
+# Using OpenTofu CLI
 tofu import immich_library.example 5678-abcd-1234
 ```

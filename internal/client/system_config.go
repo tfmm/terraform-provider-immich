@@ -32,14 +32,21 @@ type SystemConfig struct {
 }
 
 func (c *Client) GetSystemConfig() (*SystemConfig, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/system-config", c.HostURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/admin/config", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		return nil, err
+		req2, err2 := http.NewRequest("GET", fmt.Sprintf("%s/system-config", c.HostURL), nil)
+		if err2 != nil {
+			return nil, err
+		}
+		body, err = c.doRequest(req2)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var config SystemConfig
@@ -57,14 +64,21 @@ func (c *Client) UpdateSystemConfig(config SystemConfig) (*SystemConfig, error) 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/system-config", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/admin/config", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		return nil, err
+		req2, err2 := http.NewRequest("PUT", fmt.Sprintf("%s/system-config", c.HostURL), bytes.NewBuffer(rb))
+		if err2 != nil {
+			return nil, err
+		}
+		body, err = c.doRequest(req2)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var updatedConfig SystemConfig

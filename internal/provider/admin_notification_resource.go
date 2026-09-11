@@ -29,6 +29,7 @@ type adminNotificationResource struct {
 // adminNotificationResourceModel describes the resource data model.
 type adminNotificationResourceModel struct {
 	ID          types.String `tfsdk:"id"`
+	UserID      types.String `tfsdk:"user_id"`
 	Type        types.String `tfsdk:"type"`
 	Level       types.String `tfsdk:"level"`
 	Title       types.String `tfsdk:"title"`
@@ -49,6 +50,13 @@ func (r *adminNotificationResource) Schema(ctx context.Context, req resource.Sch
 				MarkdownDescription: "Unique identifier for the created notification.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"user_id": schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Target user ID to receive the notification.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"type": schema.StringAttribute{
@@ -112,6 +120,7 @@ func (r *adminNotificationResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	createReq := client.CreateAdminNotificationRequest{
+		UserId:      data.UserID.ValueString(),
 		Type:        data.Type.ValueString(),
 		Level:       data.Level.ValueString(),
 		Title:       data.Title.ValueString(),

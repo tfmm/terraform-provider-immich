@@ -31,6 +31,10 @@ resource "immich_admin_notification" "announcement" {
 - `title` (String) Notification title.
 - `type` (String) Type of notification (e.g. `SYSTEM`).
 
+### Optional
+
+- `user_id` (String) Target user ID to receive the notification.
+
 ### Read-Only
 
 - `id` (String) Unique identifier for the created notification.
@@ -39,7 +43,7 @@ resource "immich_admin_notification" "announcement" {
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -51,5 +55,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_admin_notification.example 5678-abcd-1234
+
+# Using OpenTofu CLI
 tofu import immich_admin_notification.example 5678-abcd-1234
 ```

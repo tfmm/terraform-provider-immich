@@ -164,7 +164,7 @@ Optional:
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -176,5 +176,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_system_config.example system_config
+
+# Using OpenTofu CLI
 tofu import immich_system_config.example system_config
 ```

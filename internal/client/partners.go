@@ -40,15 +40,33 @@ func (c *Client) GetPartners() ([]Partner, error) {
 	return partners, nil
 }
 
+type CreatePartnerRequest struct {
+	SharedWithId string `json:"sharedWithId"`
+}
+
 func (c *Client) CreatePartner(id string) (*Partner, error) {
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/partners/%s", c.HostURL, id), nil)
+	rb, err := json.Marshal(CreatePartnerRequest{SharedWithId: id})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/partners", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		return nil, err
+		req2, err2 := http.NewRequest("POST", fmt.Sprintf("%s/partners/%s", c.HostURL, id), nil)
+		if err2 == nil {
+			if body2, err3 := c.doRequest(req2); err3 == nil {
+				body = body2
+				err = nil
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var partner Partner

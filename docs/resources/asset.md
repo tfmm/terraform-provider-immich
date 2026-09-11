@@ -50,7 +50,7 @@ resource "immich_asset" "metadata_example" {
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -62,5 +62,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_asset.example your-asset-uuid
+
+# Using OpenTofu CLI
 tofu import immich_asset.example your-asset-uuid
 ```

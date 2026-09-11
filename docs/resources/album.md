@@ -52,14 +52,14 @@ resource "immich_album" "example" {
 
 Required:
 
-- `role` (String) Role granted to the user. Must be either `Editor` or `Viewer`.
+- `role` (String) Role granted to the user. Must be either `editor` or `viewer`.
 - `user_id` (String) Unique identifier of the user to share with.
 
 ## Import
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -71,5 +71,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_album.example 5678-abcd-1234
+
+# Using OpenTofu CLI
 tofu import immich_album.example 5678-abcd-1234
 ```

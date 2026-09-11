@@ -39,7 +39,7 @@ resource "immich_partner" "example" {
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -51,5 +51,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_partner.example partner-user-uuid
+
+# Using OpenTofu CLI
 tofu import immich_partner.example partner-user-uuid
 ```

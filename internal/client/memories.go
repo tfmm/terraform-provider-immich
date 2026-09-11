@@ -15,8 +15,10 @@ type Memory struct {
 }
 
 type CreateMemoryRequest struct {
-	MemoryAt string `json:"memoryAt"`
-	IsSaved  bool   `json:"isSaved,omitempty"`
+	Type     string                 `json:"type,omitempty"`
+	MemoryAt string                 `json:"memoryAt"`
+	IsSaved  bool                   `json:"isSaved,omitempty"`
+	Data     map[string]interface{} `json:"data,omitempty"`
 }
 
 type UpdateMemoryRequest struct {
@@ -64,6 +66,12 @@ func (c *Client) GetMemory(id string) (*Memory, error) {
 }
 
 func (c *Client) CreateMemory(memory CreateMemoryRequest) (*Memory, error) {
+	if memory.Type == "" {
+		memory.Type = "on_this_day"
+	}
+	if memory.Data == nil {
+		memory.Data = map[string]interface{}{}
+	}
 	rb, err := json.Marshal(memory)
 	if err != nil {
 		return nil, err

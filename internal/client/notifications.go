@@ -19,7 +19,8 @@ type Notification struct {
 }
 
 type CreateAdminNotificationRequest struct {
-	Type        string                 `json:"type"` // SYSTEM
+	UserId      string                 `json:"userId,omitempty"`
+	Type        string                 `json:"type"`  // SYSTEM
 	Level       string                 `json:"level"` // INFO, WARNING, ERROR
 	Title       string                 `json:"title"`
 	Description string                 `json:"description"`

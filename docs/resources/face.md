@@ -47,7 +47,7 @@ resource "immich_face" "manual" {
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -59,5 +59,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_face.example asset-uuid/face-uuid
+
+# Using OpenTofu CLI
 tofu import immich_face.example asset-uuid/face-uuid
 ```
