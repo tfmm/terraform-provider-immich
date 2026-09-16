@@ -7,6 +7,16 @@ Scope: `internal/client` (hand-rolled Immich API client) and `internal/provider`
 schema/marshalling-only — no acceptance tests exercise actual CRUD logic,
 which is how finding #1 below shipped unnoticed.
 
+**Status: all 8 findings below are fixed on this branch** (commits
+`9b425b2`..`d44344f`). Each section is left as originally written for
+context; see the commit log for what actually changed. Two additional bugs
+were discovered and fixed along the way, surfaced by the new acceptance
+tests built for #5/#8: `user_resource.go`'s `Read()` turned an empty
+`storage_label` into a known empty string instead of null (permanent
+drift), and `shared_link_resource.go`'s `key` attribute had no
+`UseStateForUnknown` plan modifier, so `Update()` failed outright since the
+API response was discarded.
+
 ## Findings, by severity
 
 ### 1. Critical — `immich_album` silently drops updates to `users` and `asset_ids`
