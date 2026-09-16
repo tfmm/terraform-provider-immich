@@ -39,8 +39,8 @@ resource "immich_user" "example" {
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
 - `is_admin` (Boolean) Whether the user has administrative privileges.
-- `password` (String, Sensitive, Deprecated) Initial password for the user. Only used during creation or when forced by `should_change_password`. Persisted to state in plain text (aside from standard state encryption); exactly one of `password` or `password_wo` must be set. Deprecated in favor of `password_wo`.
-- `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only initial password for the user. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. Exactly one of `password` or `password_wo` must be set.
+- `password` (String, Sensitive, Deprecated) Initial password for the user. Only used during creation or when forced by `should_change_password`. Persisted to state in plain text (aside from standard state encryption); at most one of `password` or `password_wo` may be set. Deprecated in favor of `password_wo`.
+- `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only initial password for the user. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. At most one of `password` or `password_wo` may be set.
 - `password_wo_version` (Number) Arbitrary version number for `password_wo`. Increment it to signal that the password should be rotated; the number itself has no meaning beyond change detection, since `password_wo`'s value is never stored to compare against.
 - `quota_size_in_bytes` (Number) Maximum storage quota for the user in bytes. Set to 0 or null for unlimited.
 - `should_change_password` (Boolean) Force the user to change their password on next login.

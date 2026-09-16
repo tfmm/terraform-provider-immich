@@ -22,7 +22,7 @@ type User struct {
 
 type UserAdminCreateRequest struct {
 	Email                string `json:"email"`
-	Password             string `json:"password"`
+	Password             string `json:"password,omitempty"`
 	Name                 string `json:"name"`
 	IsAdmin              bool   `json:"isAdmin,omitempty"`
 	StorageLabel         string `json:"storageLabel,omitempty"`

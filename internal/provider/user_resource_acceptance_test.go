@@ -171,3 +171,35 @@ resource "immich_user" "test" {
 		},
 	})
 }
+
+func TestAccUserResource_WithoutPassword(t *testing.T) {
+	_, server := newFakeUserServer()
+	defer server.Close()
+
+	providerConfig := fmt.Sprintf(`
+provider "immich" {
+  endpoint = %q
+  api_key  = "test-key"
+}
+`, server.URL)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			{
+				Config: providerConfig + `
+resource "immich_user" "oidc_user" {
+  email = "oidc@example.com"
+  name  = "OIDC User"
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("immich_user.oidc_user", "email", "oidc@example.com"),
+					resource.TestCheckResourceAttr("immich_user.oidc_user", "name", "OIDC User"),
+					resource.TestCheckNoResourceAttr("immich_user.oidc_user", "password"),
+					resource.TestCheckNoResourceAttr("immich_user.oidc_user", "password_wo"),
+				),
+			},
+		},
+	})
+}

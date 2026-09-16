@@ -70,13 +70,13 @@ func (r *userResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 				Optional:            true,
 				Sensitive:           true,
 				DeprecationMessage:  "Use `password_wo` instead, which is never persisted to plan or state.",
-				MarkdownDescription: "Initial password for the user. Only used during creation or when forced by `should_change_password`. Persisted to state in plain text (aside from standard state encryption); exactly one of `password` or `password_wo` must be set. Deprecated in favor of `password_wo`.",
+				MarkdownDescription: "Initial password for the user. Only used during creation or when forced by `should_change_password`. Persisted to state in plain text (aside from standard state encryption); at most one of `password` or `password_wo` may be set. Deprecated in favor of `password_wo`.",
 			},
 			"password_wo": schema.StringAttribute{
 				Optional:            true,
 				Sensitive:           true,
 				WriteOnly:           true,
-				MarkdownDescription: "Write-only initial password for the user. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. Exactly one of `password` or `password_wo` must be set.",
+				MarkdownDescription: "Write-only initial password for the user. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. At most one of `password` or `password_wo` may be set.",
 			},
 			"password_wo_version": schema.Int64Attribute{
 				Optional:            true,
@@ -137,9 +137,6 @@ func (r *userResource) ValidateConfig(ctx context.Context, req resource.Validate
 
 	if hasPassword && hasPasswordWO {
 		resp.Diagnostics.AddError("Conflicting Password Attributes", "Only one of `password` or `password_wo` may be set.")
-	}
-	if !hasPassword && !hasPasswordWO {
-		resp.Diagnostics.AddError("Missing Password", "Either `password` or `password_wo` must be set.")
 	}
 	if hasPasswordWO && data.PasswordWOVersion.IsNull() {
 		resp.Diagnostics.AddAttributeError(path.Root("password_wo_version"), "Missing Password Version", "`password_wo_version` must be set when `password_wo` is used, and bumped to rotate the password.")
