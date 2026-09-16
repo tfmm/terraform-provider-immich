@@ -162,38 +162,18 @@ func (c *Client) SearchAssets(ctx context.Context, search SearchAssetsRequest) (
 }
 
 func (c *Client) UploadAsset(ctx context.Context, filePath string, fileCreatedAt, fileModifiedAt time.Time, isFavorite bool) (*Asset, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
+	pr, pw := io.Pipe()
+	writer := multipart.NewWriter(pw)
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
+	// Stream the file into the request body instead of buffering it
+	// entirely in memory first, since Immich assets (photos/videos) can be
+	// large. multipart.Writer must be driven from a separate goroutine
+	// since io.Pipe's writer blocks until the reader consumes the data.
+	go func() {
+		pw.CloseWithError(writeAssetUploadBody(writer, filePath, fileCreatedAt, fileModifiedAt, isFavorite))
+	}()
 
-	part, err := writer.CreateFormFile("assetData", filepath.Base(filePath))
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(part, file)
-	if err != nil {
-		return nil, err
-	}
-
-	_ = writer.WriteField("fileCreatedAt", fileCreatedAt.Format(time.RFC3339))
-	_ = writer.WriteField("fileModifiedAt", fileModifiedAt.Format(time.RFC3339))
-	if isFavorite {
-		_ = writer.WriteField("isFavorite", "true")
-	} else {
-		_ = writer.WriteField("isFavorite", "false")
-	}
-
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/assets", c.HostURL), body)
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/assets", c.HostURL), pr)
 	if err != nil {
 		return nil, err
 	}
@@ -211,4 +191,36 @@ func (c *Client) UploadAsset(ctx context.Context, filePath string, fileCreatedAt
 	}
 
 	return &asset, nil
+}
+
+func writeAssetUploadBody(writer *multipart.Writer, filePath string, fileCreatedAt, fileModifiedAt time.Time, isFavorite bool) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	part, err := writer.CreateFormFile("assetData", filepath.Base(filePath))
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(part, file); err != nil {
+		return err
+	}
+
+	if err := writer.WriteField("fileCreatedAt", fileCreatedAt.Format(time.RFC3339)); err != nil {
+		return err
+	}
+	if err := writer.WriteField("fileModifiedAt", fileModifiedAt.Format(time.RFC3339)); err != nil {
+		return err
+	}
+	favorite := "false"
+	if isFavorite {
+		favorite = "true"
+	}
+	if err := writer.WriteField("isFavorite", favorite); err != nil {
+		return err
+	}
+
+	return writer.Close()
 }
