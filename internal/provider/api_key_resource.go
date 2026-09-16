@@ -109,7 +109,7 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 		Permissions: permissions,
 	}
 
-	apiKeyResp, err := r.client.CreateApiKey(createReq)
+	apiKeyResp, err := r.client.CreateApiKey(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create API key, got error: %s", err))
 		return
@@ -130,8 +130,12 @@ func (r *apiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	apiKey, err := r.client.GetApiKey(data.ID.ValueString())
+	apiKey, err := r.client.GetApiKey(ctx, data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read API key, got error: %s", err))
 		return
 	}
@@ -165,7 +169,7 @@ func (r *apiKeyResource) Update(ctx context.Context, req resource.UpdateRequest,
 		Permissions: permissions,
 	}
 
-	_, err := r.client.UpdateApiKey(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateApiKey(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update API key, got error: %s", err))
 		return
@@ -183,7 +187,7 @@ func (r *apiKeyResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	err := r.client.DeleteApiKey(data.ID.ValueString())
+	err := r.client.DeleteApiKey(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete API key, got error: %s", err))
 		return

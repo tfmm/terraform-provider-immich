@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -35,8 +36,8 @@ type UpdateLibraryRequest struct {
 	IsVisible         *bool    `json:"isVisible,omitempty"`
 }
 
-func (c *Client) GetLibraries() ([]Library, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/libraries", c.HostURL), nil)
+func (c *Client) GetLibraries(ctx context.Context) ([]Library, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/libraries", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +56,8 @@ func (c *Client) GetLibraries() ([]Library, error) {
 	return libraries, nil
 }
 
-func (c *Client) GetLibrary(id string) (*Library, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), nil)
+func (c *Client) GetLibrary(ctx context.Context, id string) (*Library, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +76,13 @@ func (c *Client) GetLibrary(id string) (*Library, error) {
 	return &library, nil
 }
 
-func (c *Client) CreateLibrary(library CreateLibraryRequest) (*Library, error) {
+func (c *Client) CreateLibrary(ctx context.Context, library CreateLibraryRequest) (*Library, error) {
 	rb, err := json.Marshal(library)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/libraries", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/libraries", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -100,13 +101,13 @@ func (c *Client) CreateLibrary(library CreateLibraryRequest) (*Library, error) {
 	return &newLibrary, nil
 }
 
-func (c *Client) UpdateLibrary(id string, library UpdateLibraryRequest) (*Library, error) {
+func (c *Client) UpdateLibrary(ctx context.Context, id string, library UpdateLibraryRequest) (*Library, error) {
 	rb, err := json.Marshal(library)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +126,8 @@ func (c *Client) UpdateLibrary(id string, library UpdateLibraryRequest) (*Librar
 	return &updatedLibrary, nil
 }
 
-func (c *Client) DeleteLibrary(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), nil)
+func (c *Client) DeleteLibrary(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/libraries/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

@@ -17,6 +17,7 @@ import (
 // Ensure the implementation satisfies the expected interfaces.
 var _ resource.Resource = &userResource{}
 var _ resource.ResourceWithImportState = &userResource{}
+var _ resource.ResourceWithValidateConfig = &userResource{}
 
 func NewUserResource() resource.Resource {
 	return &userResource{}
@@ -33,6 +34,8 @@ type userResourceModel struct {
 	Email                types.String `tfsdk:"email"`
 	Name                 types.String `tfsdk:"name"`
 	Password             types.String `tfsdk:"password"`
+	PasswordWO           types.String `tfsdk:"password_wo"`
+	PasswordWOVersion    types.Int64  `tfsdk:"password_wo_version"`
 	IsAdmin              types.Bool   `tfsdk:"is_admin"`
 	StorageLabel         types.String `tfsdk:"storage_label"`
 	QuotaSizeInBytes     types.Int64  `tfsdk:"quota_size_in_bytes"`
@@ -64,9 +67,20 @@ func (r *userResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 				MarkdownDescription: "Full name of the user.",
 			},
 			"password": schema.StringAttribute{
-				Required:            true,
+				Optional:            true,
 				Sensitive:           true,
-				MarkdownDescription: "Initial password for the user. Only used during creation or when forced by `should_change_password`.",
+				DeprecationMessage:  "Use `password_wo` instead, which is never persisted to plan or state.",
+				MarkdownDescription: "Initial password for the user. Only used during creation or when forced by `should_change_password`. Persisted to state in plain text (aside from standard state encryption); exactly one of `password` or `password_wo` must be set. Deprecated in favor of `password_wo`.",
+			},
+			"password_wo": schema.StringAttribute{
+				Optional:            true,
+				Sensitive:           true,
+				WriteOnly:           true,
+				MarkdownDescription: "Write-only initial password for the user. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. Exactly one of `password` or `password_wo` must be set.",
+			},
+			"password_wo_version": schema.Int64Attribute{
+				Optional:            true,
+				MarkdownDescription: "Arbitrary version number for `password_wo`. Increment it to signal that the password should be rotated; the number itself has no meaning beyond change detection, since `password_wo`'s value is never stored to compare against.",
 			},
 			"is_admin": schema.BoolAttribute{
 				Optional:            true,
@@ -111,6 +125,27 @@ func (r *userResource) Configure(ctx context.Context, req resource.ConfigureRequ
 	r.client = client
 }
 
+func (r *userResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data userResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	hasPassword := !data.Password.IsNull() && !data.Password.IsUnknown()
+	hasPasswordWO := !data.PasswordWO.IsNull() && !data.PasswordWO.IsUnknown()
+
+	if hasPassword && hasPasswordWO {
+		resp.Diagnostics.AddError("Conflicting Password Attributes", "Only one of `password` or `password_wo` may be set.")
+	}
+	if !hasPassword && !hasPasswordWO {
+		resp.Diagnostics.AddError("Missing Password", "Either `password` or `password_wo` must be set.")
+	}
+	if hasPasswordWO && data.PasswordWOVersion.IsNull() {
+		resp.Diagnostics.AddAttributeError(path.Root("password_wo_version"), "Missing Password Version", "`password_wo_version` must be set when `password_wo` is used, and bumped to rotate the password.")
+	}
+}
+
 func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data userResourceModel
 
@@ -120,10 +155,21 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
+	var config userResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	password := data.Password.ValueString()
+	if !config.PasswordWO.IsNull() {
+		password = config.PasswordWO.ValueString()
+	}
+
 	createReq := client.UserAdminCreateRequest{
 		Email:                data.Email.ValueString(),
 		Name:                 data.Name.ValueString(),
-		Password:             data.Password.ValueString(),
+		Password:             password,
 		IsAdmin:              data.IsAdmin.ValueBool(),
 		StorageLabel:         data.StorageLabel.ValueString(),
 		ShouldChangePassword: data.ShouldChangePassword.ValueBool(),
@@ -134,7 +180,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 		createReq.QuotaSizeInBytes = &quota
 	}
 
-	user, err := r.client.CreateUser(createReq)
+	user, err := r.client.CreateUser(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create user, got error: %s", err))
 		return
@@ -154,8 +200,12 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	user, err := r.client.GetUser(data.ID.ValueString())
+	user, err := r.client.GetUser(ctx, data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read user, got error: %s", err))
 		return
 	}
@@ -163,7 +213,11 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	data.Email = types.StringValue(user.Email)
 	data.Name = types.StringValue(user.Name)
 	data.IsAdmin = types.BoolValue(user.IsAdmin)
-	data.StorageLabel = types.StringPointerValue(&user.StorageLabel)
+	if user.StorageLabel != "" {
+		data.StorageLabel = types.StringValue(user.StorageLabel)
+	} else {
+		data.StorageLabel = types.StringNull()
+	}
 	if user.QuotaSizeInBytes != nil {
 		data.QuotaSizeInBytes = types.Int64Value(*user.QuotaSizeInBytes)
 	} else {
@@ -175,38 +229,48 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 }
 
 func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data userResourceModel
+	var plan, state, config userResourceModel
 
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	updateReq := client.UserAdminUpdateRequest{
-		Email:                data.Email.ValueString(),
-		Name:                 data.Name.ValueString(),
-		IsAdmin:              data.IsAdmin.ValueBool(),
-		StorageLabel:         data.StorageLabel.ValueString(),
-		ShouldChangePassword: data.ShouldChangePassword.ValueBool(),
+		Email:                plan.Email.ValueString(),
+		Name:                 plan.Name.ValueString(),
+		IsAdmin:              plan.IsAdmin.ValueBool(),
+		StorageLabel:         plan.StorageLabel.ValueString(),
+		ShouldChangePassword: plan.ShouldChangePassword.ValueBool(),
 	}
 
-	if !data.Password.IsNull() {
-		updateReq.Password = data.Password.ValueString()
+	switch {
+	case !config.PasswordWO.IsNull():
+		// The write-only value itself is never available to compare against
+		// a prior apply, so a bump in password_wo_version is the only
+		// signal that the password should be rotated.
+		if !plan.PasswordWOVersion.Equal(state.PasswordWOVersion) {
+			updateReq.Password = config.PasswordWO.ValueString()
+		}
+	case !plan.Password.IsNull() && !plan.Password.Equal(state.Password):
+		updateReq.Password = plan.Password.ValueString()
 	}
 
-	if !data.QuotaSizeInBytes.IsNull() {
-		quota := data.QuotaSizeInBytes.ValueInt64()
+	if !plan.QuotaSizeInBytes.IsNull() {
+		quota := plan.QuotaSizeInBytes.ValueInt64()
 		updateReq.QuotaSizeInBytes = &quota
 	}
 
-	_, err := r.client.UpdateUser(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateUser(ctx, plan.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update user, got error: %s", err))
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -218,7 +282,7 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	err := r.client.DeleteUser(data.ID.ValueString())
+	err := r.client.DeleteUser(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete user, got error: %s", err))
 		return

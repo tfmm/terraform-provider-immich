@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,27 +35,27 @@ func TestUserClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	users, err := c.GetUsers()
+	users, err := c.GetUsers(context.Background())
 	if err != nil || len(users) != 1 {
 		t.Fatalf("GetUsers failed: %v", err)
 	}
 
-	usr, err := c.GetUser("usr-1")
+	usr, err := c.GetUser(context.Background(), "usr-1")
 	if err != nil || usr.Name != "User 1" {
 		t.Fatalf("GetUser failed: %v", err)
 	}
 
-	created, err := c.CreateUser(UserAdminCreateRequest{Email: "user2@example.com", Name: "User 2", Password: "pass"})
+	created, err := c.CreateUser(context.Background(), UserAdminCreateRequest{Email: "user2@example.com", Name: "User 2", Password: "pass"})
 	if err != nil || created.ID != "usr-2" {
 		t.Fatalf("CreateUser failed: %v", err)
 	}
 
-	updated, err := c.UpdateUser("usr-2", UserAdminUpdateRequest{Name: "Updated User 2"})
+	updated, err := c.UpdateUser(context.Background(), "usr-2", UserAdminUpdateRequest{Name: "Updated User 2"})
 	if err != nil || updated.Name != "Updated User 2" {
 		t.Fatalf("UpdateUser failed: %v", err)
 	}
 
-	err = c.DeleteUser("usr-2")
+	err = c.DeleteUser(context.Background(), "usr-2")
 	if err != nil {
 		t.Fatalf("DeleteUser failed: %v", err)
 	}

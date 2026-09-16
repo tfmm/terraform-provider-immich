@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,12 +26,12 @@ func TestSystemConfigClient(t *testing.T) {
 
 		c := NewClient(server.URL, "token")
 
-		cfg, err := c.GetSystemConfig()
+		cfg, err := c.GetSystemConfig(context.Background())
 		if err != nil || cfg.Server["enabled"] != true {
 			t.Fatalf("GetSystemConfig failed: %v", err)
 		}
 
-		updated, err := c.UpdateSystemConfig(*cfg)
+		updated, err := c.UpdateSystemConfig(context.Background(), *cfg)
 		if err != nil || updated.Server["enabled"] != false {
 			t.Fatalf("UpdateSystemConfig failed: %v", err)
 		}
@@ -50,7 +51,7 @@ func TestSystemConfigClient(t *testing.T) {
 
 		c := NewClient(server.URL, "token")
 
-		cfg, err := c.GetSystemConfig()
+		cfg, err := c.GetSystemConfig(context.Background())
 		if err != nil || cfg.Theme["customCss"] != ".test{}" {
 			t.Fatalf("GetSystemConfig fallback failed: %v", err)
 		}

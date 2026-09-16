@@ -127,7 +127,7 @@ func (r *adminNotificationResource) Create(ctx context.Context, req resource.Cre
 		Description: data.Description.ValueString(),
 	}
 
-	notification, err := r.client.CreateAdminNotification(createReq)
+	notification, err := r.client.CreateAdminNotification(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to send admin notification, got error: %s", err))
 		return
@@ -157,7 +157,7 @@ func (r *adminNotificationResource) Delete(ctx context.Context, req resource.Del
 		return
 	}
 
-	err := r.client.DeleteNotification(data.ID.ValueString())
+	err := r.client.DeleteNotification(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete notification, got error: %s", err))
 		return

@@ -30,13 +30,17 @@ resource "immich_shared_link" "example" {
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `album_id` (String) ID of the album to share (required if type is `ALBUM`).
 - `allow_download` (Boolean) Whether to allow users with the link to download assets.
 - `allow_upload` (Boolean) Whether to allow users with the link to upload assets.
 - `asset_ids` (List of String) List of asset IDs to share (required if type is `INDIVIDUAL`).
 - `description` (String) Optional description for the shared link.
 - `expires_at` (String) ISO 8601 formatted timestamp when the link expires.
-- `password` (String, Sensitive) Optional password protection for the link.
+- `password` (String, Sensitive, Deprecated) Optional password protection for the link. Persisted to state in plain text (aside from standard state encryption); mutually exclusive with `password_wo`. Deprecated in favor of `password_wo`.
+- `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only password protection for the link. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. Mutually exclusive with `password`.
+- `password_wo_version` (Number) Arbitrary version number for `password_wo`. Increment it to signal that the password should change; the number itself has no meaning beyond change detection, since `password_wo`'s value is never stored to compare against.
 - `show_metadata` (Boolean) Whether to show asset metadata to users with the link.
 - `slug` (String) Custom URL slug for the shared link.
 

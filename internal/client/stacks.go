@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,8 +22,8 @@ type UpdateStackRequest struct {
 	PrimaryAssetId string `json:"primaryAssetId"`
 }
 
-func (c *Client) GetStacks() ([]Stack, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks", c.HostURL), nil)
+func (c *Client) GetStacks(ctx context.Context) ([]Stack, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/stacks", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +42,8 @@ func (c *Client) GetStacks() ([]Stack, error) {
 	return stacks, nil
 }
 
-func (c *Client) GetStack(id string) (*Stack, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), nil)
+func (c *Client) GetStack(ctx context.Context, id string) (*Stack, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -61,13 +62,13 @@ func (c *Client) GetStack(id string) (*Stack, error) {
 	return &stack, nil
 }
 
-func (c *Client) CreateStack(stack CreateStackRequest) (*Stack, error) {
+func (c *Client) CreateStack(ctx context.Context, stack CreateStackRequest) (*Stack, error) {
 	rb, err := json.Marshal(stack)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/stacks", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/stacks", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -86,13 +87,13 @@ func (c *Client) CreateStack(stack CreateStackRequest) (*Stack, error) {
 	return &newStack, nil
 }
 
-func (c *Client) UpdateStack(id string, stack UpdateStackRequest) (*Stack, error) {
+func (c *Client) UpdateStack(ctx context.Context, id string, stack UpdateStackRequest) (*Stack, error) {
 	rb, err := json.Marshal(stack)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +112,8 @@ func (c *Client) UpdateStack(id string, stack UpdateStackRequest) (*Stack, error
 	return &updatedStack, nil
 }
 
-func (c *Client) DeleteStack(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), nil)
+func (c *Client) DeleteStack(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/stacks/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

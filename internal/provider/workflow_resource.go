@@ -137,7 +137,7 @@ func (r *workflowResource) Create(ctx context.Context, req resource.CreateReques
 		createReq.Filters = filters
 	}
 
-	workflow, err := r.client.CreateWorkflow(createReq)
+	workflow, err := r.client.CreateWorkflow(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create workflow, got error: %s", err))
 		return
@@ -157,8 +157,12 @@ func (r *workflowResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	workflow, err := r.client.GetWorkflow(data.ID.ValueString())
+	workflow, err := r.client.GetWorkflow(ctx, data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read workflow, got error: %s", err))
 		return
 	}
@@ -216,7 +220,7 @@ func (r *workflowResource) Update(ctx context.Context, req resource.UpdateReques
 		updateReq.Filters = filters
 	}
 
-	_, err := r.client.UpdateWorkflow(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateWorkflow(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update workflow, got error: %s", err))
 		return
@@ -234,7 +238,7 @@ func (r *workflowResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	err := r.client.DeleteWorkflow(data.ID.ValueString())
+	err := r.client.DeleteWorkflow(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete workflow, got error: %s", err))
 		return

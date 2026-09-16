@@ -186,7 +186,7 @@ func (r *assetResource) Create(ctx context.Context, req resource.CreateRequest, 
 			isFavorite = data.IsFavorite.ValueBool()
 		}
 
-		asset, err := r.client.UploadAsset(filename, fileCreatedAt, fileModifiedAt, isFavorite)
+		asset, err := r.client.UploadAsset(ctx, filename, fileCreatedAt, fileModifiedAt, isFavorite)
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to upload asset, got error: %s", err))
 			return
@@ -240,7 +240,7 @@ func (r *assetResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	if needsUpdate {
-		_, err := r.client.UpdateAsset(data.ID.ValueString(), updateReq)
+		_, err := r.client.UpdateAsset(ctx, data.ID.ValueString(), updateReq)
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update asset metadata, got error: %s", err))
 			return
@@ -259,8 +259,12 @@ func (r *assetResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	asset, err := r.client.GetAsset(data.ID.ValueString())
+	asset, err := r.client.GetAsset(ctx, data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read asset, got error: %s", err))
 		return
 	}
@@ -318,7 +322,7 @@ func (r *assetResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		updateReq.Longitude = &val
 	}
 
-	_, err := r.client.UpdateAsset(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateAsset(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update asset, got error: %s", err))
 		return
@@ -336,7 +340,7 @@ func (r *assetResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
-	err := r.client.DeleteAssets([]string{data.ID.ValueString()})
+	err := r.client.DeleteAssets(ctx, []string{data.ID.ValueString()})
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete asset, got error: %s", err))
 		return

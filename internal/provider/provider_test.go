@@ -53,11 +53,10 @@ func TestProviderInitialization(t *testing.T) {
 }
 
 func TestProviderSchemaAttributes(t *testing.T) {
-	s := schema.Schema{}
 	pFunc := New("test")()
 	resp := &provider.SchemaResponse{}
 	pFunc.Schema(context.Background(), provider.SchemaRequest{}, resp)
-	s = resp.Schema
+	s := resp.Schema
 
 	endpointAttr := s.Attributes["endpoint"].(schema.StringAttribute)
 	if !endpointAttr.Optional {

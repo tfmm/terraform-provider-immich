@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,17 +24,17 @@ func TestServerClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	about, err := c.GetServerAbout()
+	about, err := c.GetServerAbout(context.Background())
 	if err != nil || about.Version != "v1.100.0" {
 		t.Fatalf("GetServerAbout failed: %v", err)
 	}
 
-	features, err := c.GetServerFeatures()
+	features, err := c.GetServerFeatures(context.Background())
 	if err != nil || !features.Oauth || features.PasswordLogin {
 		t.Fatalf("GetServerFeatures failed: %v", err)
 	}
 
-	stats, err := c.GetServerStatistics()
+	stats, err := c.GetServerStatistics(context.Background())
 	if err != nil || stats.Photos != 100 {
 		t.Fatalf("GetServerStatistics failed: %v", err)
 	}

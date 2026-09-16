@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +23,7 @@ func TestActivityClient(t *testing.T) {
 		defer server.Close()
 
 		c := NewClient(server.URL, "key")
-		activities, err := c.GetActivities("album-1", "")
+		activities, err := c.GetActivities(context.Background(), "album-1", "")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -47,7 +48,7 @@ func TestActivityClient(t *testing.T) {
 		defer server.Close()
 
 		c := NewClient(server.URL, "key")
-		act, err := c.CreateActivity(CreateActivityRequest{
+		act, err := c.CreateActivity(context.Background(), CreateActivityRequest{
 			Type:    "COMMENT",
 			AlbumId: "album-1",
 			Comment: "Nice!",
@@ -70,7 +71,7 @@ func TestActivityClient(t *testing.T) {
 		defer server.Close()
 
 		c := NewClient(server.URL, "key")
-		err := c.DeleteActivity("act-1")
+		err := c.DeleteActivity(context.Background(), "act-1")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

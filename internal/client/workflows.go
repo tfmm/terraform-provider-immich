@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -34,8 +35,8 @@ type UpdateWorkflowRequest struct {
 	Actions  []map[string]interface{} `json:"actions,omitempty"`
 }
 
-func (c *Client) GetWorkflows() ([]Workflow, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/workflows", c.HostURL), nil)
+func (c *Client) GetWorkflows(ctx context.Context) ([]Workflow, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/workflows", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +55,8 @@ func (c *Client) GetWorkflows() ([]Workflow, error) {
 	return workflows, nil
 }
 
-func (c *Client) GetWorkflow(id string) (*Workflow, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), nil)
+func (c *Client) GetWorkflow(ctx context.Context, id string) (*Workflow, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +75,13 @@ func (c *Client) GetWorkflow(id string) (*Workflow, error) {
 	return &workflow, nil
 }
 
-func (c *Client) CreateWorkflow(workflow CreateWorkflowRequest) (*Workflow, error) {
+func (c *Client) CreateWorkflow(ctx context.Context, workflow CreateWorkflowRequest) (*Workflow, error) {
 	rb, err := json.Marshal(workflow)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/workflows", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/workflows", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -99,13 +100,13 @@ func (c *Client) CreateWorkflow(workflow CreateWorkflowRequest) (*Workflow, erro
 	return &newWorkflow, nil
 }
 
-func (c *Client) UpdateWorkflow(id string, workflow UpdateWorkflowRequest) (*Workflow, error) {
+func (c *Client) UpdateWorkflow(ctx context.Context, id string, workflow UpdateWorkflowRequest) (*Workflow, error) {
 	rb, err := json.Marshal(workflow)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +125,8 @@ func (c *Client) UpdateWorkflow(id string, workflow UpdateWorkflowRequest) (*Wor
 	return &updatedWorkflow, nil
 }
 
-func (c *Client) DeleteWorkflow(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), nil)
+func (c *Client) DeleteWorkflow(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/workflows/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

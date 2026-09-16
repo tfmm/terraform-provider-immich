@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,12 +25,12 @@ type CreateActivityRequest struct {
 	Comment string `json:"comment,omitempty"`
 }
 
-func (c *Client) GetActivities(albumId string, assetId string) ([]Activity, error) {
+func (c *Client) GetActivities(ctx context.Context, albumId string, assetId string) ([]Activity, error) {
 	url := fmt.Sprintf("%s/activities?albumId=%s", c.HostURL, albumId)
 	if assetId != "" {
 		url = fmt.Sprintf("%s&assetId=%s", url, assetId)
 	}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +49,10 @@ func (c *Client) GetActivities(albumId string, assetId string) ([]Activity, erro
 	return activities, nil
 }
 
-func (c *Client) GetActivity(id string) (*Activity, error) {
+func (c *Client) GetActivity(ctx context.Context, id string) (*Activity, error) {
 	// Immich doesn't seem to have a direct GET /activities/{id} based on research.
 	// We might have to find it in the list if we want to "Read" it by ID alone.
-	// But usually Terraform Read has the ID. 
+	// But usually Terraform Read has the ID.
 	// If the API doesn't support GET by ID, we'll have to return an error or handle it.
 	// Wait, some research showed DELETE /activities/{id}.
 	// If there's no GET /activities/{id}, we might have a problem with pure Terraform Read.
@@ -60,13 +61,13 @@ func (c *Client) GetActivity(id string) (*Activity, error) {
 	return nil, fmt.Errorf("GET /activities/{id} is not supported by Immich API")
 }
 
-func (c *Client) CreateActivity(activity CreateActivityRequest) (*Activity, error) {
+func (c *Client) CreateActivity(ctx context.Context, activity CreateActivityRequest) (*Activity, error) {
 	rb, err := json.Marshal(activity)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/activities", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/activities", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +86,8 @@ func (c *Client) CreateActivity(activity CreateActivityRequest) (*Activity, erro
 	return &newActivity, nil
 }
 
-func (c *Client) DeleteActivity(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/activities/%s", c.HostURL, id), nil)
+func (c *Client) DeleteActivity(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/activities/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

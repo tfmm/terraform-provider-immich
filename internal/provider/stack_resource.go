@@ -58,7 +58,7 @@ func (r *stackResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				ElementType:         types.StringType,
 				Required:            true,
 				MarkdownDescription: "List of asset IDs to include in the stack. The first ID will be the primary asset by default.",
-				PlanModifiers: []planmodifier.List{
+				PlanModifiers:       []planmodifier.List{
 					// Creating a stack requires at least 2 assets.
 					// Updating assets in a stack might require different endpoints (Add/Remove).
 					// For simplicity, we'll use RequiresReplace if it's too complex to diff.
@@ -105,7 +105,7 @@ func (r *stackResource) Create(ctx context.Context, req resource.CreateRequest, 
 		AssetIds: assetIds,
 	}
 
-	stack, err := r.client.CreateStack(createReq)
+	stack, err := r.client.CreateStack(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create stack, got error: %s", err))
 		return
@@ -116,7 +116,7 @@ func (r *stackResource) Create(ctx context.Context, req resource.CreateRequest, 
 
 	// If primary_asset_id was explicitly set in plan and it's different from the first in asset_ids
 	if !data.PrimaryAssetId.IsNull() && data.PrimaryAssetId.ValueString() != stack.PrimaryAssetId {
-		_, err = r.client.UpdateStack(stack.ID, client.UpdateStackRequest{
+		_, err = r.client.UpdateStack(ctx, stack.ID, client.UpdateStackRequest{
 			PrimaryAssetId: data.PrimaryAssetId.ValueString(),
 		})
 		if err != nil {
@@ -137,8 +137,12 @@ func (r *stackResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	stack, err := r.client.GetStack(data.ID.ValueString())
+	stack, err := r.client.GetStack(ctx, data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read stack, got error: %s", err))
 		return
 	}
@@ -159,7 +163,7 @@ func (r *stackResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	_, err := r.client.UpdateStack(data.ID.ValueString(), client.UpdateStackRequest{
+	_, err := r.client.UpdateStack(ctx, data.ID.ValueString(), client.UpdateStackRequest{
 		PrimaryAssetId: data.PrimaryAssetId.ValueString(),
 	})
 	if err != nil {
@@ -179,7 +183,7 @@ func (r *stackResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
-	err := r.client.DeleteStack(data.ID.ValueString())
+	err := r.client.DeleteStack(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete stack, got error: %s", err))
 		return

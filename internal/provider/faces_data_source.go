@@ -124,7 +124,7 @@ func (d *facesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	faces, err := d.client.GetFaces(data.AssetId.ValueString())
+	faces, err := d.client.GetFaces(ctx, data.AssetId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read faces, got error: %s", err))
 		return

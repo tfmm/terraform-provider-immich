@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -55,12 +56,12 @@ func TestAlbumClientHTTPMethods(t *testing.T) {
 		defer server.Close()
 
 		c := NewClient(server.URL, "key")
-		albums, err := c.GetAlbums()
+		albums, err := c.GetAlbums(context.Background())
 		if err != nil || len(albums) != 1 {
 			t.Fatalf("GetAlbums failed: %v", err)
 		}
 
-		album, err := c.GetAlbum("alb-1")
+		album, err := c.GetAlbum(context.Background(), "alb-1")
 		if err != nil || album.AlbumName != "Album 1" {
 			t.Fatalf("GetAlbum failed: %v", err)
 		}
@@ -80,17 +81,17 @@ func TestAlbumClientHTTPMethods(t *testing.T) {
 		defer server.Close()
 
 		c := NewClient(server.URL, "key")
-		created, err := c.CreateAlbum(CreateAlbumRequest{AlbumName: "New Album"})
+		created, err := c.CreateAlbum(context.Background(), CreateAlbumRequest{AlbumName: "New Album"})
 		if err != nil || created.ID != "alb-2" {
 			t.Fatalf("CreateAlbum failed: %v", err)
 		}
 
-		updated, err := c.UpdateAlbum("alb-2", UpdateAlbumRequest{AlbumName: "Updated Album"})
+		updated, err := c.UpdateAlbum(context.Background(), "alb-2", UpdateAlbumRequest{AlbumName: "Updated Album"})
 		if err != nil || updated.AlbumName != "Updated Album" {
 			t.Fatalf("UpdateAlbum failed: %v", err)
 		}
 
-		err = c.DeleteAlbum("alb-2")
+		err = c.DeleteAlbum(context.Background(), "alb-2")
 		if err != nil {
 			t.Fatalf("DeleteAlbum failed: %v", err)
 		}

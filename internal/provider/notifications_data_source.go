@@ -24,7 +24,7 @@ type notificationsDataSource struct {
 
 // notificationsDataSourceModel describes the data source data model.
 type notificationsDataSourceModel struct {
-	UnreadOnly    types.Bool           `tfsdk:"unread_only"`
+	UnreadOnly    types.Bool              `tfsdk:"unread_only"`
 	Notifications []notificationsModel_ds `tfsdk:"notifications"`
 }
 
@@ -119,7 +119,7 @@ func (d *notificationsDataSource) Read(ctx context.Context, req datasource.ReadR
 		unread = data.UnreadOnly.ValueBool()
 	}
 
-	notifications, err := d.client.GetNotifications(unread)
+	notifications, err := d.client.GetNotifications(ctx, unread)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read notifications, got error: %s", err))
 		return

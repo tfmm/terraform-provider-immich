@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,28 +35,28 @@ func TestWorkflowsClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	workflows, err := c.GetWorkflows()
+	workflows, err := c.GetWorkflows(context.Background())
 	if err != nil || len(workflows) != 1 {
 		t.Fatalf("GetWorkflows failed: %v", err)
 	}
 
-	wf, err := c.GetWorkflow("wf-1")
+	wf, err := c.GetWorkflow(context.Background(), "wf-1")
 	if err != nil || wf.Name != "Workflow 1" {
 		t.Fatalf("GetWorkflow failed: %v", err)
 	}
 
-	created, err := c.CreateWorkflow(CreateWorkflowRequest{Name: "Workflow 2", Enabled: true})
+	created, err := c.CreateWorkflow(context.Background(), CreateWorkflowRequest{Name: "Workflow 2", Enabled: true})
 	if err != nil || created.ID != "wf-2" {
 		t.Fatalf("CreateWorkflow failed: %v", err)
 	}
 
 	enabled := false
-	updated, err := c.UpdateWorkflow("wf-2", UpdateWorkflowRequest{Name: "Updated Workflow", Enabled: &enabled})
+	updated, err := c.UpdateWorkflow(context.Background(), "wf-2", UpdateWorkflowRequest{Name: "Updated Workflow", Enabled: &enabled})
 	if err != nil || updated.Name != "Updated Workflow" || updated.Enabled {
 		t.Fatalf("UpdateWorkflow failed: %v", err)
 	}
 
-	err = c.DeleteWorkflow("wf-2")
+	err = c.DeleteWorkflow(context.Background(), "wf-2")
 	if err != nil {
 		t.Fatalf("DeleteWorkflow failed: %v", err)
 	}

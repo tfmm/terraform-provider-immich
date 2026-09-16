@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,22 +24,22 @@ func TestFaceClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	faces, err := c.GetFaces("asset-1")
+	faces, err := c.GetFaces(context.Background(), "asset-1")
 	if err != nil || len(faces) != 1 {
 		t.Fatalf("GetFaces failed: %v", err)
 	}
 
-	created, err := c.CreateFace(CreateFaceRequest{AssetId: "asset-1", PersonId: "person-1"})
+	created, err := c.CreateFace(context.Background(), CreateFaceRequest{AssetId: "asset-1", PersonId: "person-1"})
 	if err != nil || created.ID != "face-2" {
 		t.Fatalf("CreateFace failed: %v", err)
 	}
 
-	updated, err := c.UpdateFace("face-2", UpdateFaceRequest{PersonId: "person-2"})
+	updated, err := c.UpdateFace(context.Background(), "face-2", UpdateFaceRequest{PersonId: "person-2"})
 	if err != nil || updated.PersonId != "person-2" {
 		t.Fatalf("UpdateFace failed: %v", err)
 	}
 
-	err = c.DeleteFace("face-2")
+	err = c.DeleteFace(context.Background(), "face-2")
 	if err != nil {
 		t.Fatalf("DeleteFace failed: %v", err)
 	}

@@ -114,7 +114,7 @@ func (r *tagResource) Create(ctx context.Context, req resource.CreateRequest, re
 		createReq.ParentId = &parentId
 	}
 
-	tag, err := r.client.CreateTag(createReq)
+	tag, err := r.client.CreateTag(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create tag, got error: %s", err))
 		return
@@ -136,8 +136,12 @@ func (r *tagResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	tag, err := r.client.GetTag(data.ID.ValueString())
+	tag, err := r.client.GetTag(ctx, data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read tag, got error: %s", err))
 		return
 	}
@@ -165,7 +169,7 @@ func (r *tagResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		updateReq.Color = &color
 	}
 
-	_, err := r.client.UpdateTag(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateTag(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update tag, got error: %s", err))
 		return
@@ -183,7 +187,7 @@ func (r *tagResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	err := r.client.DeleteTag(data.ID.ValueString())
+	err := r.client.DeleteTag(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete tag, got error: %s", err))
 		return

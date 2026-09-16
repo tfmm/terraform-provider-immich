@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,14 +28,14 @@ type ServerFeatures struct {
 }
 
 type ServerStatistics struct {
-	Photos   int   `json:"photos"`
-	Videos   int   `json:"videos"`
-	Usage    int64 `json:"usage"`
-	Users    int   `json:"users"`
+	Photos int   `json:"photos"`
+	Videos int   `json:"videos"`
+	Usage  int64 `json:"usage"`
+	Users  int   `json:"users"`
 }
 
-func (c *Client) GetServerAbout() (*ServerAbout, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/server/about", c.HostURL), nil)
+func (c *Client) GetServerAbout(ctx context.Context) (*ServerAbout, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/server/about", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -53,13 +54,17 @@ func (c *Client) GetServerAbout() (*ServerAbout, error) {
 	return &about, nil
 }
 
-func (c *Client) GetServerFeatures() (*ServerFeatures, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/public/config", c.HostURL), nil)
+func (c *Client) GetServerFeatures(ctx context.Context) (*ServerFeatures, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/public/config", c.HostURL), nil)
 	if err == nil {
 		if body, err := c.doRequest(req); err == nil {
 			var publicConfig struct {
-				Oauth         struct{ Enabled bool `json:"enabled"` } `json:"oauth"`
-				PasswordLogin struct{ Enabled bool `json:"enabled"` } `json:"passwordLogin"`
+				Oauth struct {
+					Enabled bool `json:"enabled"`
+				} `json:"oauth"`
+				PasswordLogin struct {
+					Enabled bool `json:"enabled"`
+				} `json:"passwordLogin"`
 			}
 			if err := json.Unmarshal(body, &publicConfig); err == nil {
 				return &ServerFeatures{
@@ -70,7 +75,7 @@ func (c *Client) GetServerFeatures() (*ServerFeatures, error) {
 		}
 	}
 
-	req2, err := http.NewRequest("GET", fmt.Sprintf("%s/server/features", c.HostURL), nil)
+	req2, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/server/features", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +94,8 @@ func (c *Client) GetServerFeatures() (*ServerFeatures, error) {
 	return &features, nil
 }
 
-func (c *Client) GetServerStatistics() (*ServerStatistics, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/server/statistics", c.HostURL), nil)
+func (c *Client) GetServerStatistics(ctx context.Context) (*ServerStatistics, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/server/statistics", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}

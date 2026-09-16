@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,27 +35,27 @@ func TestApiKeyClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	keys, err := c.GetApiKeys()
+	keys, err := c.GetApiKeys(context.Background())
 	if err != nil || len(keys) != 1 {
 		t.Fatalf("GetApiKeys failed: %v", err)
 	}
 
-	key, err := c.GetApiKey("key-1")
+	key, err := c.GetApiKey(context.Background(), "key-1")
 	if err != nil || key.Name != "Test Key" {
 		t.Fatalf("GetApiKey failed: %v", err)
 	}
 
-	created, err := c.CreateApiKey(ApiKeyCreateRequest{Name: "New Key"})
+	created, err := c.CreateApiKey(context.Background(), ApiKeyCreateRequest{Name: "New Key"})
 	if err != nil || created.Secret != "secret-value" || created.ApiKey.ID != "key-2" {
 		t.Fatalf("CreateApiKey failed: %v", err)
 	}
 
-	updated, err := c.UpdateApiKey("key-2", ApiKeyUpdateRequest{Name: "Updated Key"})
+	updated, err := c.UpdateApiKey(context.Background(), "key-2", ApiKeyUpdateRequest{Name: "Updated Key"})
 	if err != nil || updated.Name != "Updated Key" {
 		t.Fatalf("UpdateApiKey failed: %v", err)
 	}
 
-	err = c.DeleteApiKey("key-2")
+	err = c.DeleteApiKey(context.Background(), "key-2")
 	if err != nil {
 		t.Fatalf("DeleteApiKey failed: %v", err)
 	}

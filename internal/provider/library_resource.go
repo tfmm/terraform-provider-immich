@@ -140,7 +140,7 @@ func (r *libraryResource) Create(ctx context.Context, req resource.CreateRequest
 		IsVisible:         data.IsVisible.ValueBool(),
 	}
 
-	library, err := r.client.CreateLibrary(createReq)
+	library, err := r.client.CreateLibrary(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create library, got error: %s", err))
 		return
@@ -162,8 +162,12 @@ func (r *libraryResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	library, err := r.client.GetLibrary(data.ID.ValueString())
+	library, err := r.client.GetLibrary(ctx, data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read library, got error: %s", err))
 		return
 	}
@@ -218,7 +222,7 @@ func (r *libraryResource) Update(ctx context.Context, req resource.UpdateRequest
 		IsVisible:         &isVisible,
 	}
 
-	_, err := r.client.UpdateLibrary(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateLibrary(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update library, got error: %s", err))
 		return
@@ -236,7 +240,7 @@ func (r *libraryResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	err := r.client.DeleteLibrary(data.ID.ValueString())
+	err := r.client.DeleteLibrary(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete library, got error: %s", err))
 		return

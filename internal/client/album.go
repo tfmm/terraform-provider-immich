@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -51,8 +52,8 @@ type BulkIdsRequest struct {
 	Ids []string `json:"ids"`
 }
 
-func (c *Client) GetAlbums() ([]Album, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/albums", c.HostURL), nil)
+func (c *Client) GetAlbums(ctx context.Context) ([]Album, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/albums", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +72,8 @@ func (c *Client) GetAlbums() ([]Album, error) {
 	return albums, nil
 }
 
-func (c *Client) GetAlbum(id string) (*Album, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/albums/%s", c.HostURL, id), nil)
+func (c *Client) GetAlbum(ctx context.Context, id string) (*Album, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/albums/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -91,13 +92,13 @@ func (c *Client) GetAlbum(id string) (*Album, error) {
 	return &album, nil
 }
 
-func (c *Client) CreateAlbum(data CreateAlbumRequest) (*Album, error) {
+func (c *Client) CreateAlbum(ctx context.Context, data CreateAlbumRequest) (*Album, error) {
 	rb, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/albums", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/albums", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -116,13 +117,13 @@ func (c *Client) CreateAlbum(data CreateAlbumRequest) (*Album, error) {
 	return &album, nil
 }
 
-func (c *Client) UpdateAlbum(id string, data UpdateAlbumRequest) (*Album, error) {
+func (c *Client) UpdateAlbum(ctx context.Context, id string, data UpdateAlbumRequest) (*Album, error) {
 	rb, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s/albums/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PATCH", fmt.Sprintf("%s/albums/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -141,8 +142,8 @@ func (c *Client) UpdateAlbum(id string, data UpdateAlbumRequest) (*Album, error)
 	return &album, nil
 }
 
-func (c *Client) DeleteAlbum(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/albums/%s", c.HostURL, id), nil)
+func (c *Client) DeleteAlbum(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/albums/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}
@@ -151,14 +152,30 @@ func (c *Client) DeleteAlbum(id string) error {
 	return err
 }
 
-func (c *Client) AddAssetsToAlbum(albumId string, assetIds []string) error {
+func (c *Client) AddAssetsToAlbum(ctx context.Context, albumId string, assetIds []string) error {
 	data := BulkIdsRequest{Ids: assetIds}
 	rb, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/albums/%s/assets", c.HostURL, albumId), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/albums/%s/assets", c.HostURL, albumId), bytes.NewBuffer(rb))
+	if err != nil {
+		return err
+	}
+
+	_, err = c.doRequest(req)
+	return err
+}
+
+func (c *Client) RemoveAssetsFromAlbum(ctx context.Context, albumId string, assetIds []string) error {
+	data := BulkIdsRequest{Ids: assetIds}
+	rb, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/albums/%s/assets", c.HostURL, albumId), bytes.NewBuffer(rb))
 	if err != nil {
 		return err
 	}
@@ -175,14 +192,14 @@ type UpdateAlbumUserRequest struct {
 	Role string `json:"role"`
 }
 
-func (c *Client) AddUsersToAlbum(albumId string, users []AlbumUserCreate) (*Album, error) {
+func (c *Client) AddUsersToAlbum(ctx context.Context, albumId string, users []AlbumUserCreate) (*Album, error) {
 	data := AddUsersRequest{AlbumUsers: users}
 	rb, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/albums/%s/users", c.HostURL, albumId), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/albums/%s/users", c.HostURL, albumId), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -201,14 +218,14 @@ func (c *Client) AddUsersToAlbum(albumId string, users []AlbumUserCreate) (*Albu
 	return &album, nil
 }
 
-func (c *Client) UpdateAlbumUserRole(albumId string, userId string, role string) (*Album, error) {
+func (c *Client) UpdateAlbumUserRole(ctx context.Context, albumId string, userId string, role string) (*Album, error) {
 	data := UpdateAlbumUserRequest{Role: role}
 	rb, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/albums/%s/user/%s", c.HostURL, albumId, userId), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/albums/%s/user/%s", c.HostURL, albumId, userId), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +244,8 @@ func (c *Client) UpdateAlbumUserRole(albumId string, userId string, role string)
 	return &album, nil
 }
 
-func (c *Client) RemoveUserFromAlbum(albumId string, userId string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/albums/%s/user/%s", c.HostURL, albumId, userId), nil)
+func (c *Client) RemoveUserFromAlbum(ctx context.Context, albumId string, userId string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/albums/%s/user/%s", c.HostURL, albumId, userId), nil)
 	if err != nil {
 		return err
 	}
@@ -236,4 +253,3 @@ func (c *Client) RemoveUserFromAlbum(albumId string, userId string) error {
 	_, err = c.doRequest(req)
 	return err
 }
-

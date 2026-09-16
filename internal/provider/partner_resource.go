@@ -97,15 +97,15 @@ func (r *partnerResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	partner, err := r.client.CreatePartner(data.PartnerId.ValueString())
+	partner, err := r.client.CreatePartner(ctx, data.PartnerId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create partner, got error: %s", err))
 		return
 	}
 
 	// Update timeline visibility if different from default
-	if !data.InTimeline.IsNull() && data.InTimeline.ValueBool() == false {
-		_, err = r.client.UpdatePartner(data.PartnerId.ValueString(), client.UpdatePartnerRequest{
+	if !data.InTimeline.IsNull() && !data.InTimeline.ValueBool() {
+		_, err = r.client.UpdatePartner(ctx, data.PartnerId.ValueString(), client.UpdatePartnerRequest{
 			InTimeline: false,
 		})
 		if err != nil {
@@ -129,7 +129,7 @@ func (r *partnerResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	partners, err := r.client.GetPartners()
+	partners, err := r.client.GetPartners(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read partners, got error: %s", err))
 		return
@@ -164,7 +164,7 @@ func (r *partnerResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	_, err := r.client.UpdatePartner(data.PartnerId.ValueString(), client.UpdatePartnerRequest{
+	_, err := r.client.UpdatePartner(ctx, data.PartnerId.ValueString(), client.UpdatePartnerRequest{
 		InTimeline: data.InTimeline.ValueBool(),
 	})
 	if err != nil {
@@ -184,7 +184,7 @@ func (r *partnerResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	err := r.client.DeletePartner(data.PartnerId.ValueString())
+	err := r.client.DeletePartner(ctx, data.PartnerId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete partner, got error: %s", err))
 		return

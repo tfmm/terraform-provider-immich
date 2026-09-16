@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,8 +28,8 @@ type UpdateTagRequest struct {
 	Color *string `json:"color,omitempty"`
 }
 
-func (c *Client) GetTags() ([]Tag, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tags", c.HostURL), nil)
+func (c *Client) GetTags(ctx context.Context) ([]Tag, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/tags", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +48,8 @@ func (c *Client) GetTags() ([]Tag, error) {
 	return tags, nil
 }
 
-func (c *Client) GetTag(id string) (*Tag, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tags/%s", c.HostURL, id), nil)
+func (c *Client) GetTag(ctx context.Context, id string) (*Tag, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/tags/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -67,13 +68,13 @@ func (c *Client) GetTag(id string) (*Tag, error) {
 	return &tag, nil
 }
 
-func (c *Client) CreateTag(tag CreateTagRequest) (*Tag, error) {
+func (c *Client) CreateTag(ctx context.Context, tag CreateTagRequest) (*Tag, error) {
 	rb, err := json.Marshal(tag)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/tags", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/tags", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -92,13 +93,13 @@ func (c *Client) CreateTag(tag CreateTagRequest) (*Tag, error) {
 	return &newTag, nil
 }
 
-func (c *Client) UpdateTag(id string, tag UpdateTagRequest) (*Tag, error) {
+func (c *Client) UpdateTag(ctx context.Context, id string, tag UpdateTagRequest) (*Tag, error) {
 	rb, err := json.Marshal(tag)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/tags/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/tags/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +118,8 @@ func (c *Client) UpdateTag(id string, tag UpdateTagRequest) (*Tag, error) {
 	return &updatedTag, nil
 }
 
-func (c *Client) DeleteTag(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/tags/%s", c.HostURL, id), nil)
+func (c *Client) DeleteTag(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/tags/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}
