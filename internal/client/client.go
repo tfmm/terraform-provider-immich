@@ -60,7 +60,7 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {

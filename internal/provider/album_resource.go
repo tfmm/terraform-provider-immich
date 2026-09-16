@@ -158,7 +158,7 @@ func updateAlbumResourceModel(data *albumResourceModel, album *client.Album) {
 			})
 		}
 	}
-	if len(users) == 0 && (data.Users == nil || len(data.Users) == 0) {
+	if len(users) == 0 && len(data.Users) == 0 {
 		data.Users = nil
 	} else {
 		data.Users = users

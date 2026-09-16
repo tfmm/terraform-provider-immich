@@ -198,7 +198,7 @@ func writeAssetUploadBody(writer *multipart.Writer, filePath string, fileCreated
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	part, err := writer.CreateFormFile("assetData", filepath.Base(filePath))
 	if err != nil {

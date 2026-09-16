@@ -104,7 +104,7 @@ func (r *partnerResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Update timeline visibility if different from default
-	if !data.InTimeline.IsNull() && data.InTimeline.ValueBool() == false {
+	if !data.InTimeline.IsNull() && !data.InTimeline.ValueBool() {
 		_, err = r.client.UpdatePartner(ctx, data.PartnerId.ValueString(), client.UpdatePartnerRequest{
 			InTimeline: false,
 		})

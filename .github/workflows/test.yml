@@ -41,3 +41,22 @@ jobs:
         run: |
           go generate ./...
           git diff --exit-code || (echo "Docs are not up to date. Run 'go generate ./...' and commit changes." && exit 1)
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.13.2

@@ -1,0 +1,21 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - staticcheck
+    - ineffassign
+    - unused
+    - errcheck
+  exclusions:
+    rules:
+      # Test fixtures write canned responses to httptest.ResponseRecorder/
+      # os.File handles; checking every one of those return values is pure
+      # churn with no real bug-catching value in this codebase.
+      - path: _test\.go
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
