@@ -2,6 +2,8 @@ package client
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -35,4 +37,62 @@ func TestCreateAlbumRequestJSON(t *testing.T) {
 	if string(data) != expected {
 		t.Errorf("expected %s, got %s", expected, string(data))
 	}
+}
+
+func TestAlbumClientHTTPMethods(t *testing.T) {
+	t.Run("GetAlbums & GetAlbum", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/albums" {
+				w.Write([]byte(`[{"id":"alb-1","albumName":"Album 1"}]`))
+				return
+			}
+			if r.URL.Path == "/albums/alb-1" {
+				w.Write([]byte(`{"id":"alb-1","albumName":"Album 1"}`))
+				return
+			}
+			http.NotFound(w, r)
+		}))
+		defer server.Close()
+
+		c := NewClient(server.URL, "key")
+		albums, err := c.GetAlbums()
+		if err != nil || len(albums) != 1 {
+			t.Fatalf("GetAlbums failed: %v", err)
+		}
+
+		album, err := c.GetAlbum("alb-1")
+		if err != nil || album.AlbumName != "Album 1" {
+			t.Fatalf("GetAlbum failed: %v", err)
+		}
+	})
+
+	t.Run("CreateAlbum, UpdateAlbum, DeleteAlbum", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case "POST":
+				w.Write([]byte(`{"id":"alb-2","albumName":"New Album"}`))
+			case "PATCH":
+				w.Write([]byte(`{"id":"alb-2","albumName":"Updated Album"}`))
+			case "DELETE":
+				w.WriteHeader(http.StatusOK)
+			}
+		}))
+		defer server.Close()
+
+		c := NewClient(server.URL, "key")
+		created, err := c.CreateAlbum(CreateAlbumRequest{AlbumName: "New Album"})
+		if err != nil || created.ID != "alb-2" {
+			t.Fatalf("CreateAlbum failed: %v", err)
+		}
+
+		updated, err := c.UpdateAlbum("alb-2", UpdateAlbumRequest{AlbumName: "Updated Album"})
+		if err != nil || updated.AlbumName != "Updated Album" {
+			t.Fatalf("UpdateAlbum failed: %v", err)
+		}
+
+		err = c.DeleteAlbum("alb-2")
+		if err != nil {
+			t.Fatalf("DeleteAlbum failed: %v", err)
+		}
+	})
 }

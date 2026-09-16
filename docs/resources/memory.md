@@ -38,7 +38,7 @@ resource "immich_memory" "example" {
 
 Import is supported using the following syntax:
 
-### OpenTofu Import Block (Recommended)
+### Import Block (Recommended)
 
 ```terraform
 import {
@@ -50,5 +50,9 @@ import {
 ### CLI Import
 
 ```terraform
+# Using Terraform CLI
+terraform import immich_memory.example 5678-abcd-1234
+
+# Using OpenTofu CLI
 tofu import immich_memory.example 5678-abcd-1234
 ```

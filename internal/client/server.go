@@ -54,12 +54,28 @@ func (c *Client) GetServerAbout() (*ServerAbout, error) {
 }
 
 func (c *Client) GetServerFeatures() (*ServerFeatures, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/server/features", c.HostURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/public/config", c.HostURL), nil)
+	if err == nil {
+		if body, err := c.doRequest(req); err == nil {
+			var publicConfig struct {
+				Oauth         struct{ Enabled bool `json:"enabled"` } `json:"oauth"`
+				PasswordLogin struct{ Enabled bool `json:"enabled"` } `json:"passwordLogin"`
+			}
+			if err := json.Unmarshal(body, &publicConfig); err == nil {
+				return &ServerFeatures{
+					Oauth:         publicConfig.Oauth.Enabled,
+					PasswordLogin: publicConfig.PasswordLogin.Enabled,
+				}, nil
+			}
+		}
+	}
+
+	req2, err := http.NewRequest("GET", fmt.Sprintf("%s/server/features", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req)
+	body, err := c.doRequest(req2)
 	if err != nil {
 		return nil, err
 	}

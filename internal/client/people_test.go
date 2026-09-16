@@ -2,6 +2,8 @@ package client
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -38,5 +40,59 @@ func TestUpdatePersonRequestJSON(t *testing.T) {
 	expected := `{"name":"John Doe","birthDate":"1988-05-16"}`
 	if string(data) != expected {
 		t.Errorf("expected %s, got %s", expected, string(data))
+	}
+}
+
+func TestPeopleClientHTTPMethods(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			if r.URL.Path == "/people" {
+				w.Write([]byte(`{"people":[{"id":"p-1","name":"Person 1"}]}`))
+				return
+			}
+			if r.URL.Path == "/people/p-1" {
+				w.Write([]byte(`{"id":"p-1","name":"Person 1"}`))
+				return
+			}
+		case "POST":
+			w.Write([]byte(`{"id":"p-2","name":"Person 2"}`))
+			return
+		case "PUT":
+			w.Write([]byte(`{"id":"p-2","name":"Updated Person"}`))
+			return
+		case "DELETE":
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+
+	c := NewClient(server.URL, "token")
+
+	people, err := c.GetPeople(true)
+	if err != nil || len(people) != 1 {
+		t.Fatalf("GetPeople failed: %v", err)
+	}
+
+	person, err := c.GetPerson("p-1")
+	if err != nil || person.Name != "Person 1" {
+		t.Fatalf("GetPerson failed: %v", err)
+	}
+
+	created, err := c.CreatePerson(CreatePersonRequest{Name: "Person 2"})
+	if err != nil || created.ID != "p-2" {
+		t.Fatalf("CreatePerson failed: %v", err)
+	}
+
+	updated, err := c.UpdatePerson("p-2", UpdatePersonRequest{Name: "Updated Person"})
+	if err != nil || updated.Name != "Updated Person" {
+		t.Fatalf("UpdatePerson failed: %v", err)
+	}
+
+	err = c.DeletePerson("p-2")
+	if err != nil {
+		t.Fatalf("DeletePerson failed: %v", err)
 	}
 }
