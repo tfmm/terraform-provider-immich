@@ -227,6 +227,52 @@ func (r *albumResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
+func diffAlbumAssetIds(planIds, stateIds []types.String) (toAdd, toRemove []string) {
+	planSet := make(map[string]bool, len(planIds))
+	for _, id := range planIds {
+		planSet[id.ValueString()] = true
+	}
+	stateSet := make(map[string]bool, len(stateIds))
+	for _, id := range stateIds {
+		stateSet[id.ValueString()] = true
+	}
+	for id := range planSet {
+		if !stateSet[id] {
+			toAdd = append(toAdd, id)
+		}
+	}
+	for id := range stateSet {
+		if !planSet[id] {
+			toRemove = append(toRemove, id)
+		}
+	}
+	return
+}
+
+func diffAlbumUsers(planUsers, stateUsers []albumUserModel) (toAdd []albumUserModel, toRemove []string, toUpdateRole []albumUserModel) {
+	planByID := make(map[string]albumUserModel, len(planUsers))
+	for _, u := range planUsers {
+		planByID[u.UserId.ValueString()] = u
+	}
+	stateByID := make(map[string]albumUserModel, len(stateUsers))
+	for _, u := range stateUsers {
+		stateByID[u.UserId.ValueString()] = u
+	}
+	for id, u := range planByID {
+		if sUser, ok := stateByID[id]; !ok {
+			toAdd = append(toAdd, u)
+		} else if sUser.Role.ValueString() != u.Role.ValueString() {
+			toUpdateRole = append(toUpdateRole, u)
+		}
+	}
+	for id := range stateByID {
+		if _, ok := planByID[id]; !ok {
+			toRemove = append(toRemove, id)
+		}
+	}
+	return
+}
+
 func (r *albumResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state albumResourceModel
 
@@ -235,6 +281,48 @@ func (r *albumResource) Update(ctx context.Context, req resource.UpdateRequest, 
 
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	assetsToAdd, assetsToRemove := diffAlbumAssetIds(plan.AssetIds, state.AssetIds)
+	usersToAdd, usersToRemove, usersToUpdateRole := diffAlbumUsers(plan.Users, state.Users)
+
+	if len(assetsToAdd) > 0 {
+		if err := r.client.AddAssetsToAlbum(plan.ID.ValueString(), assetsToAdd); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to add assets to album, got error: %s", err))
+			return
+		}
+	}
+
+	if len(assetsToRemove) > 0 {
+		if err := r.client.RemoveAssetsFromAlbum(plan.ID.ValueString(), assetsToRemove); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to remove assets from album, got error: %s", err))
+			return
+		}
+	}
+
+	if len(usersToAdd) > 0 {
+		var toAdd []client.AlbumUserCreate
+		for _, u := range usersToAdd {
+			toAdd = append(toAdd, client.AlbumUserCreate{UserId: u.UserId.ValueString(), Role: u.Role.ValueString()})
+		}
+		if _, err := r.client.AddUsersToAlbum(plan.ID.ValueString(), toAdd); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to add users to album, got error: %s", err))
+			return
+		}
+	}
+
+	for _, u := range usersToUpdateRole {
+		if _, err := r.client.UpdateAlbumUserRole(plan.ID.ValueString(), u.UserId.ValueString(), u.Role.ValueString()); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update album user role, got error: %s", err))
+			return
+		}
+	}
+
+	for _, id := range usersToRemove {
+		if err := r.client.RemoveUserFromAlbum(plan.ID.ValueString(), id); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to remove user from album, got error: %s", err))
+			return
+		}
 	}
 
 	var desc *string

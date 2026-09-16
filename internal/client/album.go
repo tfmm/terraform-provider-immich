@@ -167,6 +167,22 @@ func (c *Client) AddAssetsToAlbum(albumId string, assetIds []string) error {
 	return err
 }
 
+func (c *Client) RemoveAssetsFromAlbum(albumId string, assetIds []string) error {
+	data := BulkIdsRequest{Ids: assetIds}
+	rb, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/albums/%s/assets", c.HostURL, albumId), bytes.NewBuffer(rb))
+	if err != nil {
+		return err
+	}
+
+	_, err = c.doRequest(req)
+	return err
+}
+
 type AddUsersRequest struct {
 	AlbumUsers []AlbumUserCreate `json:"albumUsers"`
 }
