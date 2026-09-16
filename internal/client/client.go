@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,27 @@ func NewClient(host, token string) *Client {
 		HostURL:    host,
 		Token:      token,
 	}
+}
+
+// APIError represents a non-2xx response from the Immich API. It preserves
+// the HTTP status code so callers can distinguish, for example, "not found"
+// from other failures without parsing the error string.
+type APIError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("status: %d, body: %s", e.StatusCode, e.Body)
+}
+
+// IsNotFound reports whether err is an APIError with a 404 status code.
+func IsNotFound(err error) bool {
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == http.StatusNotFound
+	}
+	return false
 }
 
 func (c *Client) doRequest(req *http.Request) ([]byte, error) {
@@ -38,7 +60,7 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	}
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return nil, fmt.Errorf("status: %d, body: %s", res.StatusCode, string(body))
+		return nil, &APIError{StatusCode: res.StatusCode, Body: string(body)}
 	}
 
 	return body, nil
