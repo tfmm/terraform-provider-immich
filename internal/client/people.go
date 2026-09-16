@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -30,9 +31,9 @@ type UpdatePersonRequest struct {
 	IsFavorite *bool   `json:"isFavorite,omitempty"`
 }
 
-func (c *Client) GetPeople(withHidden bool) ([]Person, error) {
+func (c *Client) GetPeople(ctx context.Context, withHidden bool) ([]Person, error) {
 	url := fmt.Sprintf("%s/people?withHidden=%v", c.HostURL, withHidden)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func (c *Client) GetPeople(withHidden bool) ([]Person, error) {
 		return nil, err
 	}
 
-	// The API might return a paginated response or a simple array. 
+	// The API might return a paginated response or a simple array.
 	// Based on docs, it returns an array of PersonResponseDto or a paginated response.
 	// Actually, the docs say GET /people returns PeopleResponseDto which has people: PersonResponseDto[]
 	// Let's check.
@@ -62,8 +63,8 @@ func (c *Client) GetPeople(withHidden bool) ([]Person, error) {
 	return response.People, nil
 }
 
-func (c *Client) GetPerson(id string) (*Person, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/people/%s", c.HostURL, id), nil)
+func (c *Client) GetPerson(ctx context.Context, id string) (*Person, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/people/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +83,13 @@ func (c *Client) GetPerson(id string) (*Person, error) {
 	return &person, nil
 }
 
-func (c *Client) CreatePerson(person CreatePersonRequest) (*Person, error) {
+func (c *Client) CreatePerson(ctx context.Context, person CreatePersonRequest) (*Person, error) {
 	rb, err := json.Marshal(person)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/people", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/people", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +108,13 @@ func (c *Client) CreatePerson(person CreatePersonRequest) (*Person, error) {
 	return &newPerson, nil
 }
 
-func (c *Client) UpdatePerson(id string, person UpdatePersonRequest) (*Person, error) {
+func (c *Client) UpdatePerson(ctx context.Context, id string, person UpdatePersonRequest) (*Person, error) {
 	rb, err := json.Marshal(person)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/people/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/people/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +133,8 @@ func (c *Client) UpdatePerson(id string, person UpdatePersonRequest) (*Person, e
 	return &updatedPerson, nil
 }
 
-func (c *Client) DeletePerson(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/people/%s", c.HostURL, id), nil)
+func (c *Client) DeletePerson(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/people/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

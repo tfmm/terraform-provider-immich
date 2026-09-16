@@ -221,7 +221,7 @@ func (r *personResource) Create(ctx context.Context, req resource.CreateRequest,
 			IsFavorite: &isFavorite,
 		}
 
-		person, err := r.client.UpdatePerson(data.ID.ValueString(), updateReq)
+		person, err := r.client.UpdatePerson(ctx, data.ID.ValueString(), updateReq)
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update person, got error: %s", err))
 			return
@@ -244,7 +244,7 @@ func (r *personResource) Create(ctx context.Context, req resource.CreateRequest,
 		IsFavorite: data.IsFavorite.ValueBool(),
 	}
 
-	person, err := r.client.CreatePerson(createReq)
+	person, err := r.client.CreatePerson(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create person, got error: %s", err))
 		return
@@ -268,7 +268,7 @@ func (r *personResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	person, err := r.client.GetPerson(data.ID.ValueString())
+	person, err := r.client.GetPerson(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -314,7 +314,7 @@ func (r *personResource) Update(ctx context.Context, req resource.UpdateRequest,
 		IsFavorite: &isFavorite,
 	}
 
-	person, err := r.client.UpdatePerson(data.ID.ValueString(), updateReq)
+	person, err := r.client.UpdatePerson(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update person, got error: %s", err))
 		return
@@ -337,7 +337,7 @@ func (r *personResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	err := r.client.DeletePerson(data.ID.ValueString())
+	err := r.client.DeletePerson(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete person, got error: %s", err))
 		return
@@ -347,4 +347,3 @@ func (r *personResource) Delete(ctx context.Context, req resource.DeleteRequest,
 func (r *personResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
-

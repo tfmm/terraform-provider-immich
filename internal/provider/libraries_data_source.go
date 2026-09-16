@@ -98,7 +98,7 @@ func (d *librariesDataSource) Configure(ctx context.Context, req datasource.Conf
 func (d *librariesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data librariesDataSourceModel
 
-	libraries, err := d.client.GetLibraries()
+	libraries, err := d.client.GetLibraries(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read libraries, got error: %s", err))
 		return

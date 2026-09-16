@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,28 +35,28 @@ func TestMemoriesClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	memories, err := c.GetMemories()
+	memories, err := c.GetMemories(context.Background())
 	if err != nil || len(memories) != 1 {
 		t.Fatalf("GetMemories failed: %v", err)
 	}
 
-	mem, err := c.GetMemory("mem-1")
+	mem, err := c.GetMemory(context.Background(), "mem-1")
 	if err != nil || mem.MemoryAt != "2026-01-01T00:00:00Z" {
 		t.Fatalf("GetMemory failed: %v", err)
 	}
 
-	created, err := c.CreateMemory(CreateMemoryRequest{MemoryAt: "2026-01-02T00:00:00Z"})
+	created, err := c.CreateMemory(context.Background(), CreateMemoryRequest{MemoryAt: "2026-01-02T00:00:00Z"})
 	if err != nil || created.ID != "mem-2" {
 		t.Fatalf("CreateMemory failed: %v", err)
 	}
 
 	isSaved := true
-	updated, err := c.UpdateMemory("mem-2", UpdateMemoryRequest{IsSaved: &isSaved})
+	updated, err := c.UpdateMemory(context.Background(), "mem-2", UpdateMemoryRequest{IsSaved: &isSaved})
 	if err != nil || !updated.IsSaved {
 		t.Fatalf("UpdateMemory failed: %v", err)
 	}
 
-	err = c.DeleteMemory("mem-2")
+	err = c.DeleteMemory(context.Background(), "mem-2")
 	if err != nil {
 		t.Fatalf("DeleteMemory failed: %v", err)
 	}

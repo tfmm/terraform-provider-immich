@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,9 +28,9 @@ type CreateAdminNotificationRequest struct {
 	Data        map[string]interface{} `json:"data,omitempty"`
 }
 
-func (c *Client) GetNotifications(unread bool) ([]Notification, error) {
+func (c *Client) GetNotifications(ctx context.Context, unread bool) ([]Notification, error) {
 	url := fmt.Sprintf("%s/notifications?unread=%v", c.HostURL, unread)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +49,13 @@ func (c *Client) GetNotifications(unread bool) ([]Notification, error) {
 	return notifications, nil
 }
 
-func (c *Client) CreateAdminNotification(notification CreateAdminNotificationRequest) (*Notification, error) {
+func (c *Client) CreateAdminNotification(ctx context.Context, notification CreateAdminNotificationRequest) (*Notification, error) {
 	rb, err := json.Marshal(notification)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/admin/notifications", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/admin/notifications", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +74,8 @@ func (c *Client) CreateAdminNotification(notification CreateAdminNotificationReq
 	return &newNotification, nil
 }
 
-func (c *Client) DeleteNotification(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/notifications/%s", c.HostURL, id), nil)
+func (c *Client) DeleteNotification(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/notifications/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,28 +35,28 @@ func TestTagsClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	tags, err := c.GetTags()
+	tags, err := c.GetTags(context.Background())
 	if err != nil || len(tags) != 1 {
 		t.Fatalf("GetTags failed: %v", err)
 	}
 
-	tag, err := c.GetTag("tag-1")
+	tag, err := c.GetTag(context.Background(), "tag-1")
 	if err != nil || tag.Name != "Nature" {
 		t.Fatalf("GetTag failed: %v", err)
 	}
 
-	created, err := c.CreateTag(CreateTagRequest{Name: "Travel"})
+	created, err := c.CreateTag(context.Background(), CreateTagRequest{Name: "Travel"})
 	if err != nil || created.ID != "tag-2" {
 		t.Fatalf("CreateTag failed: %v", err)
 	}
 
 	color := "#ff0000"
-	updated, err := c.UpdateTag("tag-2", UpdateTagRequest{Color: &color})
+	updated, err := c.UpdateTag(context.Background(), "tag-2", UpdateTagRequest{Color: &color})
 	if err != nil || updated.Name != "Vacation" {
 		t.Fatalf("UpdateTag failed: %v", err)
 	}
 
-	err = c.DeleteTag("tag-2")
+	err = c.DeleteTag(context.Background(), "tag-2")
 	if err != nil {
 		t.Fatalf("DeleteTag failed: %v", err)
 	}

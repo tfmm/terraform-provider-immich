@@ -100,7 +100,7 @@ func (r *memoryResource) Create(ctx context.Context, req resource.CreateRequest,
 		IsSaved:  data.IsSaved.ValueBool(),
 	}
 
-	memory, err := r.client.CreateMemory(createReq)
+	memory, err := r.client.CreateMemory(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create memory, got error: %s", err))
 		return
@@ -120,7 +120,7 @@ func (r *memoryResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	memory, err := r.client.GetMemory(data.ID.ValueString())
+	memory, err := r.client.GetMemory(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -150,7 +150,7 @@ func (r *memoryResource) Update(ctx context.Context, req resource.UpdateRequest,
 		IsSaved: &isSaved,
 	}
 
-	_, err := r.client.UpdateMemory(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateMemory(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update memory, got error: %s", err))
 		return
@@ -168,7 +168,7 @@ func (r *memoryResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	err := r.client.DeleteMemory(data.ID.ValueString())
+	err := r.client.DeleteMemory(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete memory, got error: %s", err))
 		return

@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,18 +14,18 @@ import (
 )
 
 type Asset struct {
-	ID               string   `json:"id"`
-	OwnerId          string   `json:"ownerId"`
-	Type             string   `json:"type"` // IMAGE or VIDEO
-	OriginalFileName string   `json:"originalFileName"`
-	FileCreatedAt    string   `json:"fileCreatedAt"`
-	FileModifiedAt   string   `json:"fileModifiedAt"`
-	UpdatedAt        string   `json:"updatedAt"`
-	IsFavorite       bool     `json:"isFavorite"`
-	IsArchived       bool     `json:"isArchived"`
-	Description      string   `json:"description"`
-	Duration         string   `json:"duration,omitempty"`
-	ExifInfo         *Exif    `json:"exifInfo,omitempty"`
+	ID               string `json:"id"`
+	OwnerId          string `json:"ownerId"`
+	Type             string `json:"type"` // IMAGE or VIDEO
+	OriginalFileName string `json:"originalFileName"`
+	FileCreatedAt    string `json:"fileCreatedAt"`
+	FileModifiedAt   string `json:"fileModifiedAt"`
+	UpdatedAt        string `json:"updatedAt"`
+	IsFavorite       bool   `json:"isFavorite"`
+	IsArchived       bool   `json:"isArchived"`
+	Description      string `json:"description"`
+	Duration         string `json:"duration,omitempty"`
+	ExifInfo         *Exif  `json:"exifInfo,omitempty"`
 }
 
 type Exif struct {
@@ -41,9 +42,9 @@ type Exif struct {
 }
 
 type UpdateAssetRequest struct {
-	IsFavorite  *bool   `json:"isFavorite,omitempty"`
-	IsArchived  *bool   `json:"isArchived,omitempty"`
-	Description string  `json:"description,omitempty"`
+	IsFavorite  *bool    `json:"isFavorite,omitempty"`
+	IsArchived  *bool    `json:"isArchived,omitempty"`
+	Description string   `json:"description,omitempty"`
 	Latitude    *float64 `json:"latitude,omitempty"`
 	Longitude   *float64 `json:"longitude,omitempty"`
 }
@@ -71,8 +72,8 @@ type SearchAssetsResponse struct {
 	} `json:"assets"`
 }
 
-func (c *Client) GetAsset(id string) (*Asset, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/assets/%s", c.HostURL, id), nil)
+func (c *Client) GetAsset(ctx context.Context, id string) (*Asset, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/assets/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -91,13 +92,13 @@ func (c *Client) GetAsset(id string) (*Asset, error) {
 	return &asset, nil
 }
 
-func (c *Client) UpdateAsset(id string, update UpdateAssetRequest) (*Asset, error) {
+func (c *Client) UpdateAsset(ctx context.Context, id string, update UpdateAssetRequest) (*Asset, error) {
 	rb, err := json.Marshal(update)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/assets/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/assets/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func (c *Client) UpdateAsset(id string, update UpdateAssetRequest) (*Asset, erro
 	return &updatedAsset, nil
 }
 
-func (c *Client) DeleteAssets(ids []string) error {
+func (c *Client) DeleteAssets(ctx context.Context, ids []string) error {
 	type DeleteRequest struct {
 		Ids []string `json:"ids"`
 	}
@@ -126,7 +127,7 @@ func (c *Client) DeleteAssets(ids []string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/assets", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/assets", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return err
 	}
@@ -135,13 +136,13 @@ func (c *Client) DeleteAssets(ids []string) error {
 	return err
 }
 
-func (c *Client) SearchAssets(search SearchAssetsRequest) (*SearchAssetsResponse, error) {
+func (c *Client) SearchAssets(ctx context.Context, search SearchAssetsRequest) (*SearchAssetsResponse, error) {
 	rb, err := json.Marshal(search)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/search/metadata", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/search/metadata", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func (c *Client) SearchAssets(search SearchAssetsRequest) (*SearchAssetsResponse
 	return &response, nil
 }
 
-func (c *Client) UploadAsset(filePath string, fileCreatedAt, fileModifiedAt time.Time, isFavorite bool) (*Asset, error) {
+func (c *Client) UploadAsset(ctx context.Context, filePath string, fileCreatedAt, fileModifiedAt time.Time, isFavorite bool) (*Asset, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -192,7 +193,7 @@ func (c *Client) UploadAsset(filePath string, fileCreatedAt, fileModifiedAt time
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/assets", c.HostURL), body)
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/assets", c.HostURL), body)
 	if err != nil {
 		return nil, err
 	}

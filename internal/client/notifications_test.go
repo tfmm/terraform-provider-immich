@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,17 +22,17 @@ func TestNotificationsClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	notifs, err := c.GetNotifications(true)
+	notifs, err := c.GetNotifications(context.Background(), true)
 	if err != nil || len(notifs) != 1 {
 		t.Fatalf("GetNotifications failed: %v", err)
 	}
 
-	created, err := c.CreateAdminNotification(CreateAdminNotificationRequest{Title: "Alert", Type: "SYSTEM", Level: "INFO"})
+	created, err := c.CreateAdminNotification(context.Background(), CreateAdminNotificationRequest{Title: "Alert", Type: "SYSTEM", Level: "INFO"})
 	if err != nil || created.ID != "notif-2" {
 		t.Fatalf("CreateAdminNotification failed: %v", err)
 	}
 
-	err = c.DeleteNotification("notif-2")
+	err = c.DeleteNotification(context.Background(), "notif-2")
 	if err != nil {
 		t.Fatalf("DeleteNotification failed: %v", err)
 	}

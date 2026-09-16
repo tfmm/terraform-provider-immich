@@ -1,10 +1,12 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestClientDoRequestHeadersAndErrors(t *testing.T) {
@@ -87,4 +89,40 @@ func TestClientDoRequestHeadersAndErrors(t *testing.T) {
 			t.Errorf("expected IsNotFound to be true for a 404, got error: %v", err)
 		}
 	})
+}
+
+// TestClientMethodsRespectContextCancellation is a regression test: client
+// methods previously built requests with http.NewRequest instead of
+// http.NewRequestWithContext, so the ctx passed in from a resource's
+// Create/Read/Update/Delete was silently discarded and could never cancel
+// an in-flight HTTP call.
+func TestClientMethodsRespectContextCancellation(t *testing.T) {
+	blockUntilDone := make(chan struct{})
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-blockUntilDone
+	}))
+	// server.Close() blocks until outstanding handlers return, so the
+	// handler must be unblocked first.
+	defer server.Close()
+	defer close(blockUntilDone)
+
+	c := NewClient(server.URL, "test-api-key")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	_, err := c.GetAlbum(ctx, "album-1")
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatalf("expected an error from a canceled context, got nil")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("expected context.DeadlineExceeded, got: %v", err)
+	}
+	if elapsed > 2*time.Second {
+		t.Errorf("expected the request to be canceled promptly, took %v", elapsed)
+	}
 }

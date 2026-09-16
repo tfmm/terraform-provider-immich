@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -39,8 +40,8 @@ type UserAdminUpdateRequest struct {
 	ShouldChangePassword bool   `json:"shouldChangePassword,omitempty"`
 }
 
-func (c *Client) GetUsers() ([]User, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/admin/users", c.HostURL), nil)
+func (c *Client) GetUsers(ctx context.Context) ([]User, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/admin/users", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +60,8 @@ func (c *Client) GetUsers() ([]User, error) {
 	return users, nil
 }
 
-func (c *Client) GetUser(userID string) (*User, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/admin/users/%s", c.HostURL, userID), nil)
+func (c *Client) GetUser(ctx context.Context, userID string) (*User, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/admin/users/%s", c.HostURL, userID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -79,13 +80,13 @@ func (c *Client) GetUser(userID string) (*User, error) {
 	return &user, nil
 }
 
-func (c *Client) CreateUser(user UserAdminCreateRequest) (*User, error) {
+func (c *Client) CreateUser(ctx context.Context, user UserAdminCreateRequest) (*User, error) {
 	rb, err := json.Marshal(user)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/admin/users", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/admin/users", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -104,13 +105,13 @@ func (c *Client) CreateUser(user UserAdminCreateRequest) (*User, error) {
 	return &newUser, nil
 }
 
-func (c *Client) UpdateUser(userID string, user UserAdminUpdateRequest) (*User, error) {
+func (c *Client) UpdateUser(ctx context.Context, userID string, user UserAdminUpdateRequest) (*User, error) {
 	rb, err := json.Marshal(user)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/admin/users/%s", c.HostURL, userID), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/admin/users/%s", c.HostURL, userID), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -129,11 +130,11 @@ func (c *Client) UpdateUser(userID string, user UserAdminUpdateRequest) (*User, 
 	return &updatedUser, nil
 }
 
-func (c *Client) DeleteUser(userID string) error {
+func (c *Client) DeleteUser(ctx context.Context, userID string) error {
 	// UserAdminDeleteDto has force: boolean
 	// For simplicity, we'll force delete if needed, or just send empty object if it works.
 	// Actually, the DTO says optional.
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/admin/users/%s", c.HostURL, userID), bytes.NewBufferString("{}"))
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/admin/users/%s", c.HostURL, userID), bytes.NewBufferString("{}"))
 	if err != nil {
 		return err
 	}

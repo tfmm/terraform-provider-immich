@@ -134,7 +134,7 @@ func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, r
 		createReq.QuotaSizeInBytes = &quota
 	}
 
-	user, err := r.client.CreateUser(createReq)
+	user, err := r.client.CreateUser(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create user, got error: %s", err))
 		return
@@ -154,7 +154,7 @@ func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	user, err := r.client.GetUser(data.ID.ValueString())
+	user, err := r.client.GetUser(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -204,7 +204,7 @@ func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		updateReq.QuotaSizeInBytes = &quota
 	}
 
-	_, err := r.client.UpdateUser(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateUser(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update user, got error: %s", err))
 		return
@@ -222,7 +222,7 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	err := r.client.DeleteUser(data.ID.ValueString())
+	err := r.client.DeleteUser(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete user, got error: %s", err))
 		return

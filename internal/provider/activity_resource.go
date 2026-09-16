@@ -129,7 +129,7 @@ func (r *activityResource) Create(ctx context.Context, req resource.CreateReques
 		Comment: data.Comment.ValueString(),
 	}
 
-	activity, err := r.client.CreateActivity(createReq)
+	activity, err := r.client.CreateActivity(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create activity, got error: %s", err))
 		return
@@ -152,7 +152,7 @@ func (r *activityResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// We have to find the activity in the list
-	activities, err := r.client.GetActivities(data.AlbumId.ValueString(), data.AssetId.ValueString())
+	activities, err := r.client.GetActivities(ctx, data.AlbumId.ValueString(), data.AssetId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read activities, got error: %s", err))
 		return
@@ -192,7 +192,7 @@ func (r *activityResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	err := r.client.DeleteActivity(data.ID.ValueString())
+	err := r.client.DeleteActivity(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete activity, got error: %s", err))
 		return

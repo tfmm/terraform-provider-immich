@@ -70,7 +70,7 @@ func (r *faceResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			"bounding_box_x1": schema.Float64Attribute{
 				Required:            true,
 				MarkdownDescription: "The left coordinate of the bounding box.",
-				PlanModifiers: []planmodifier.Float64{
+				PlanModifiers:       []planmodifier.Float64{
 					// RequiresReplace because we can't update bounding box via PUT /faces
 				},
 			},
@@ -137,7 +137,7 @@ func (r *faceResource) Create(ctx context.Context, req resource.CreateRequest, r
 		ImageWidth:    int(data.ImageWidth.ValueInt64()),
 	}
 
-	face, err := r.client.CreateFace(createReq)
+	face, err := r.client.CreateFace(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create face, got error: %s", err))
 		return
@@ -158,7 +158,7 @@ func (r *faceResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	// We have to find the face in the list for the asset
-	faces, err := r.client.GetFaces(data.AssetId.ValueString())
+	faces, err := r.client.GetFaces(ctx, data.AssetId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read faces for asset, got error: %s", err))
 		return
@@ -201,7 +201,7 @@ func (r *faceResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		PersonId: data.PersonId.ValueString(),
 	}
 
-	_, err := r.client.UpdateFace(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateFace(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update face, got error: %s", err))
 		return
@@ -219,7 +219,7 @@ func (r *faceResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	err := r.client.DeleteFace(data.ID.ValueString())
+	err := r.client.DeleteFace(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete face, got error: %s", err))
 		return

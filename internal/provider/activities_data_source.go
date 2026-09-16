@@ -114,7 +114,7 @@ func (d *activitiesDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	activities, err := d.client.GetActivities(data.AlbumId.ValueString(), data.AssetId.ValueString())
+	activities, err := d.client.GetActivities(ctx, data.AlbumId.ValueString(), data.AssetId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read activities, got error: %s", err))
 		return

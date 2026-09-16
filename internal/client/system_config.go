@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -31,15 +32,15 @@ type SystemConfig struct {
 	User             map[string]interface{} `json:"user"`
 }
 
-func (c *Client) GetSystemConfig() (*SystemConfig, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/admin/config", c.HostURL), nil)
+func (c *Client) GetSystemConfig(ctx context.Context) (*SystemConfig, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/admin/config", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		req2, err2 := http.NewRequest("GET", fmt.Sprintf("%s/system-config", c.HostURL), nil)
+		req2, err2 := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/system-config", c.HostURL), nil)
 		if err2 != nil {
 			return nil, err
 		}
@@ -58,20 +59,20 @@ func (c *Client) GetSystemConfig() (*SystemConfig, error) {
 	return &config, nil
 }
 
-func (c *Client) UpdateSystemConfig(config SystemConfig) (*SystemConfig, error) {
+func (c *Client) UpdateSystemConfig(ctx context.Context, config SystemConfig) (*SystemConfig, error) {
 	rb, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/admin/config", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/admin/config", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		req2, err2 := http.NewRequest("PUT", fmt.Sprintf("%s/system-config", c.HostURL), bytes.NewBuffer(rb))
+		req2, err2 := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/system-config", c.HostURL), bytes.NewBuffer(rb))
 		if err2 != nil {
 			return nil, err
 		}

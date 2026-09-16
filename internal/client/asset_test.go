@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -43,22 +44,22 @@ func TestAssetClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	asset, err := c.GetAsset("asset-1")
+	asset, err := c.GetAsset(context.Background(), "asset-1")
 	if err != nil || asset.OriginalFileName != "test.jpg" {
 		t.Fatalf("GetAsset failed: %v", err)
 	}
 
-	updated, err := c.UpdateAsset("asset-1", UpdateAssetRequest{Description: "Updated desc"})
+	updated, err := c.UpdateAsset(context.Background(), "asset-1", UpdateAssetRequest{Description: "Updated desc"})
 	if err != nil || updated.Description != "Updated desc" {
 		t.Fatalf("UpdateAsset failed: %v", err)
 	}
 
-	searchRes, err := c.SearchAssets(SearchAssetsRequest{OriginalFileName: "test.jpg"})
+	searchRes, err := c.SearchAssets(context.Background(), SearchAssetsRequest{OriginalFileName: "test.jpg"})
 	if err != nil || searchRes.Assets.Total != 1 {
 		t.Fatalf("SearchAssets failed: %v", err)
 	}
 
-	err = c.DeleteAssets([]string{"asset-1"})
+	err = c.DeleteAssets(context.Background(), []string{"asset-1"})
 	if err != nil {
 		t.Fatalf("DeleteAssets failed: %v", err)
 	}
@@ -68,7 +69,7 @@ func TestAssetClient(t *testing.T) {
 		t.Fatalf("failed creating temp file: %v", err)
 	}
 
-	uploaded, err := c.UploadAsset(tmpFile, time.Now(), time.Now(), false)
+	uploaded, err := c.UploadAsset(context.Background(), tmpFile, time.Now(), time.Now(), false)
 	if err != nil || uploaded.ID != "asset-2" {
 		t.Fatalf("UploadAsset failed: %v", err)
 	}

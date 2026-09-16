@@ -173,7 +173,7 @@ func (r *sharedLinkResource) Create(ctx context.Context, req resource.CreateRequ
 		createReq.AssetIds = assetIds
 	}
 
-	sharedLink, err := r.client.CreateSharedLink(createReq)
+	sharedLink, err := r.client.CreateSharedLink(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create shared link, got error: %s", err))
 		return
@@ -194,7 +194,7 @@ func (r *sharedLinkResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	sharedLink, err := r.client.GetSharedLink(data.ID.ValueString())
+	sharedLink, err := r.client.GetSharedLink(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -235,7 +235,7 @@ func (r *sharedLinkResource) Update(ctx context.Context, req resource.UpdateRequ
 		ShowMetadata:  data.ShowMetadata.ValueBoolPointer(),
 	}
 
-	_, err := r.client.UpdateSharedLink(data.ID.ValueString(), updateReq)
+	_, err := r.client.UpdateSharedLink(ctx, data.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update shared link, got error: %s", err))
 		return
@@ -253,7 +253,7 @@ func (r *sharedLinkResource) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	err := r.client.DeleteSharedLink(data.ID.ValueString())
+	err := r.client.DeleteSharedLink(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete shared link, got error: %s", err))
 		return

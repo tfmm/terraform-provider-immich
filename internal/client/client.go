@@ -5,7 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
+
+// DefaultTimeout bounds how long a single request to the Immich API may
+// take. Without it, a hung or unreachable server would block
+// terraform apply indefinitely. It is generous to accommodate asset
+// uploads, which can be large; callers that need finer-grained control
+// (e.g. cancellation) should rely on the context passed into each method.
+const DefaultTimeout = 5 * time.Minute
 
 type Client struct {
 	HostURL    string
@@ -15,7 +23,7 @@ type Client struct {
 
 func NewClient(host, token string) *Client {
 	return &Client{
-		HTTPClient: &http.Client{},
+		HTTPClient: &http.Client{Timeout: DefaultTimeout},
 		HostURL:    host,
 		Token:      token,
 	}

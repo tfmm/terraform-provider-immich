@@ -159,7 +159,7 @@ func (d *assetsDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		searchReq.IsFavorite = &val
 	}
 
-	response, err := d.client.SearchAssets(searchReq)
+	response, err := d.client.SearchAssets(ctx, searchReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to search assets, got error: %s", err))
 		return

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -29,22 +30,22 @@ func TestPartnersClient(t *testing.T) {
 
 	c := NewClient(server.URL, "token")
 
-	partners, err := c.GetPartners()
+	partners, err := c.GetPartners(context.Background())
 	if err != nil || len(partners) != 1 {
 		t.Fatalf("GetPartners failed: %v", err)
 	}
 
-	created, err := c.CreatePartner("user-123")
+	created, err := c.CreatePartner(context.Background(), "user-123")
 	if err != nil || created.ID != "part-2" {
 		t.Fatalf("CreatePartner failed: %v", err)
 	}
 
-	updated, err := c.UpdatePartner("part-2", UpdatePartnerRequest{InTimeline: true})
+	updated, err := c.UpdatePartner(context.Background(), "part-2", UpdatePartnerRequest{InTimeline: true})
 	if err != nil || !updated.InTimeline {
 		t.Fatalf("UpdatePartner failed: %v", err)
 	}
 
-	err = c.DeletePartner("part-2")
+	err = c.DeletePartner(context.Background(), "part-2")
 	if err != nil {
 		t.Fatalf("DeletePartner failed: %v", err)
 	}

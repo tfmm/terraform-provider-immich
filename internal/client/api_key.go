@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -30,8 +31,8 @@ type ApiKeyUpdateRequest struct {
 	Permissions []string `json:"permissions,omitempty"`
 }
 
-func (c *Client) GetApiKeys() ([]ApiKey, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api-keys", c.HostURL), nil)
+func (c *Client) GetApiKeys(ctx context.Context) ([]ApiKey, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api-keys", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +51,8 @@ func (c *Client) GetApiKeys() ([]ApiKey, error) {
 	return apiKeys, nil
 }
 
-func (c *Client) GetApiKey(apiKeyID string) (*ApiKey, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api-keys/%s", c.HostURL, apiKeyID), nil)
+func (c *Client) GetApiKey(ctx context.Context, apiKeyID string) (*ApiKey, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api-keys/%s", c.HostURL, apiKeyID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -70,13 +71,13 @@ func (c *Client) GetApiKey(apiKeyID string) (*ApiKey, error) {
 	return &apiKey, nil
 }
 
-func (c *Client) CreateApiKey(apiKey ApiKeyCreateRequest) (*ApiKeyCreateResponse, error) {
+func (c *Client) CreateApiKey(ctx context.Context, apiKey ApiKeyCreateRequest) (*ApiKeyCreateResponse, error) {
 	rb, err := json.Marshal(apiKey)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api-keys", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/api-keys", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +96,13 @@ func (c *Client) CreateApiKey(apiKey ApiKeyCreateRequest) (*ApiKeyCreateResponse
 	return &resp, nil
 }
 
-func (c *Client) UpdateApiKey(apiKeyID string, apiKey ApiKeyUpdateRequest) (*ApiKey, error) {
+func (c *Client) UpdateApiKey(ctx context.Context, apiKeyID string, apiKey ApiKeyUpdateRequest) (*ApiKey, error) {
 	rb, err := json.Marshal(apiKey)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/api-keys/%s", c.HostURL, apiKeyID), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/api-keys/%s", c.HostURL, apiKeyID), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +121,8 @@ func (c *Client) UpdateApiKey(apiKeyID string, apiKey ApiKeyUpdateRequest) (*Api
 	return &updatedApiKey, nil
 }
 
-func (c *Client) DeleteApiKey(apiKeyID string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/api-keys/%s", c.HostURL, apiKeyID), nil)
+func (c *Client) DeleteApiKey(ctx context.Context, apiKeyID string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/api-keys/%s", c.HostURL, apiKeyID), nil)
 	if err != nil {
 		return err
 	}

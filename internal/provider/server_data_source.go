@@ -100,7 +100,7 @@ func (d *serverDataSource) Configure(ctx context.Context, req datasource.Configu
 func (d *serverDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data serverDataSourceModel
 
-	about, err := d.client.GetServerAbout()
+	about, err := d.client.GetServerAbout(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read server about, got error: %s", err))
 		return

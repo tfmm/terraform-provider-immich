@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -25,8 +26,8 @@ type UpdateMemoryRequest struct {
 	IsSaved *bool `json:"isSaved,omitempty"`
 }
 
-func (c *Client) GetMemories() ([]Memory, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/memories", c.HostURL), nil)
+func (c *Client) GetMemories(ctx context.Context) ([]Memory, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/memories", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +46,8 @@ func (c *Client) GetMemories() ([]Memory, error) {
 	return memories, nil
 }
 
-func (c *Client) GetMemory(id string) (*Memory, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/memories/%s", c.HostURL, id), nil)
+func (c *Client) GetMemory(ctx context.Context, id string) (*Memory, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/memories/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (c *Client) GetMemory(id string) (*Memory, error) {
 	return &memory, nil
 }
 
-func (c *Client) CreateMemory(memory CreateMemoryRequest) (*Memory, error) {
+func (c *Client) CreateMemory(ctx context.Context, memory CreateMemoryRequest) (*Memory, error) {
 	if memory.Type == "" {
 		memory.Type = "on_this_day"
 	}
@@ -77,7 +78,7 @@ func (c *Client) CreateMemory(memory CreateMemoryRequest) (*Memory, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/memories", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/memories", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +97,13 @@ func (c *Client) CreateMemory(memory CreateMemoryRequest) (*Memory, error) {
 	return &newMemory, nil
 }
 
-func (c *Client) UpdateMemory(id string, memory UpdateMemoryRequest) (*Memory, error) {
+func (c *Client) UpdateMemory(ctx context.Context, id string, memory UpdateMemoryRequest) (*Memory, error) {
 	rb, err := json.Marshal(memory)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/memories/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/memories/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +122,8 @@ func (c *Client) UpdateMemory(id string, memory UpdateMemoryRequest) (*Memory, e
 	return &updatedMemory, nil
 }
 
-func (c *Client) DeleteMemory(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/memories/%s", c.HostURL, id), nil)
+func (c *Client) DeleteMemory(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/memories/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

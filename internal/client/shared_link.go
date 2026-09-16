@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -44,8 +45,8 @@ type SharedLinkUpdateRequest struct {
 	ShowMetadata  *bool   `json:"showMetadata,omitempty"`
 }
 
-func (c *Client) GetSharedLinks() ([]SharedLink, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/shared-links", c.HostURL), nil)
+func (c *Client) GetSharedLinks(ctx context.Context) ([]SharedLink, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/shared-links", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +65,8 @@ func (c *Client) GetSharedLinks() ([]SharedLink, error) {
 	return sharedLinks, nil
 }
 
-func (c *Client) GetSharedLink(id string) (*SharedLink, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/shared-links/%s", c.HostURL, id), nil)
+func (c *Client) GetSharedLink(ctx context.Context, id string) (*SharedLink, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/shared-links/%s", c.HostURL, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +85,13 @@ func (c *Client) GetSharedLink(id string) (*SharedLink, error) {
 	return &sharedLink, nil
 }
 
-func (c *Client) CreateSharedLink(data SharedLinkCreateRequest) (*SharedLink, error) {
+func (c *Client) CreateSharedLink(ctx context.Context, data SharedLinkCreateRequest) (*SharedLink, error) {
 	rb, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/shared-links", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/shared-links", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +110,13 @@ func (c *Client) CreateSharedLink(data SharedLinkCreateRequest) (*SharedLink, er
 	return &sharedLink, nil
 }
 
-func (c *Client) UpdateSharedLink(id string, data SharedLinkUpdateRequest) (*SharedLink, error) {
+func (c *Client) UpdateSharedLink(ctx context.Context, id string, data SharedLinkUpdateRequest) (*SharedLink, error) {
 	rb, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s/shared-links/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PATCH", fmt.Sprintf("%s/shared-links/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +135,8 @@ func (c *Client) UpdateSharedLink(id string, data SharedLinkUpdateRequest) (*Sha
 	return &sharedLink, nil
 }
 
-func (c *Client) DeleteSharedLink(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/shared-links/%s", c.HostURL, id), nil)
+func (c *Client) DeleteSharedLink(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/shared-links/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

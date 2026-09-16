@@ -98,7 +98,7 @@ func (d *usersDataSource) Configure(ctx context.Context, req datasource.Configur
 func (d *usersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data usersDataSourceModel
 
-	users, err := d.client.GetUsers()
+	users, err := d.client.GetUsers(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read users, got error: %s", err))
 		return

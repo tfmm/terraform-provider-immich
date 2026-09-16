@@ -93,7 +93,7 @@ func (d *albumsDataSource) Configure(ctx context.Context, req datasource.Configu
 func (d *albumsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data albumsDataSourceModel
 
-	albums, err := d.client.GetAlbums()
+	albums, err := d.client.GetAlbums(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read albums, got error: %s", err))
 		return

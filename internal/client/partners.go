@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -20,8 +21,8 @@ type UpdatePartnerRequest struct {
 	InTimeline bool `json:"inTimeline"`
 }
 
-func (c *Client) GetPartners() ([]Partner, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/partners", c.HostURL), nil)
+func (c *Client) GetPartners(ctx context.Context) ([]Partner, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/partners", c.HostURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -44,20 +45,20 @@ type CreatePartnerRequest struct {
 	SharedWithId string `json:"sharedWithId"`
 }
 
-func (c *Client) CreatePartner(id string) (*Partner, error) {
+func (c *Client) CreatePartner(ctx context.Context, id string) (*Partner, error) {
 	rb, err := json.Marshal(CreatePartnerRequest{SharedWithId: id})
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/partners", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/partners", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := c.doRequest(req)
 	if err != nil {
-		req2, err2 := http.NewRequest("POST", fmt.Sprintf("%s/partners/%s", c.HostURL, id), nil)
+		req2, err2 := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/partners/%s", c.HostURL, id), nil)
 		if err2 == nil {
 			if body2, err3 := c.doRequest(req2); err3 == nil {
 				body = body2
@@ -78,13 +79,13 @@ func (c *Client) CreatePartner(id string) (*Partner, error) {
 	return &partner, nil
 }
 
-func (c *Client) UpdatePartner(id string, update UpdatePartnerRequest) (*Partner, error) {
+func (c *Client) UpdatePartner(ctx context.Context, id string, update UpdatePartnerRequest) (*Partner, error) {
 	rb, err := json.Marshal(update)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/partners/%s", c.HostURL, id), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/partners/%s", c.HostURL, id), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +104,8 @@ func (c *Client) UpdatePartner(id string, update UpdatePartnerRequest) (*Partner
 	return &partner, nil
 }
 
-func (c *Client) DeletePartner(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/partners/%s", c.HostURL, id), nil)
+func (c *Client) DeletePartner(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/partners/%s", c.HostURL, id), nil)
 	if err != nil {
 		return err
 	}

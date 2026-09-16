@@ -29,7 +29,7 @@ type systemConfigResourceModel struct {
 	// For simplicity in this implementation, we'll use map[string]types.Map or similar if possible.
 	// But Terraform plugin framework works best with explicit nested attributes.
 	// To keep it manageable and robust, we'll focus on some common sections first.
-	
+
 	ID              types.String          `tfsdk:"id"`
 	PasswordLogin   *passwordLoginModel   `tfsdk:"password_login"`
 	OAuth           *oauthModel           `tfsdk:"oauth"`
@@ -44,9 +44,9 @@ type passwordLoginModel struct {
 }
 
 type machineLearningModel struct {
-	Enabled        types.Bool   `tfsdk:"enabled"`
-	URL            types.String `tfsdk:"url"`
-	ClipModel      types.String `tfsdk:"clip_model"`
+	Enabled                types.Bool   `tfsdk:"enabled"`
+	URL                    types.String `tfsdk:"url"`
+	ClipModel              types.String `tfsdk:"clip_model"`
 	FacialRecognitionModel types.String `tfsdk:"facial_recognition_model"`
 }
 
@@ -77,17 +77,17 @@ type emailTemplatesModel struct {
 }
 
 type oauthModel struct {
-	Enabled            types.Bool   `tfsdk:"enabled"`
-	IssuerUrl          types.String `tfsdk:"issuer_url"`
-	ClientId           types.String `tfsdk:"client_id"`
-	ClientSecret       types.String `tfsdk:"client_secret"`
-	Scope              types.String `tfsdk:"scope"`
-	ButtonText         types.String `tfsdk:"button_text"`
-	AutoLaunch         types.Bool   `tfsdk:"auto_launch"`
-	AutoRegister       types.Bool   `tfsdk:"auto_register"`
-	MobileOverrideUrl  types.String `tfsdk:"mobile_override_url"`
-	MobileRedirectUri  types.String `tfsdk:"mobile_redirect_uri"`
-	SigningAlgorithm   types.String `tfsdk:"signing_algorithm"`
+	Enabled             types.Bool   `tfsdk:"enabled"`
+	IssuerUrl           types.String `tfsdk:"issuer_url"`
+	ClientId            types.String `tfsdk:"client_id"`
+	ClientSecret        types.String `tfsdk:"client_secret"`
+	Scope               types.String `tfsdk:"scope"`
+	ButtonText          types.String `tfsdk:"button_text"`
+	AutoLaunch          types.Bool   `tfsdk:"auto_launch"`
+	AutoRegister        types.Bool   `tfsdk:"auto_register"`
+	MobileOverrideUrl   types.String `tfsdk:"mobile_override_url"`
+	MobileRedirectUri   types.String `tfsdk:"mobile_redirect_uri"`
+	SigningAlgorithm    types.String `tfsdk:"signing_algorithm"`
 	DefaultStorageQuota types.Int64  `tfsdk:"default_storage_quota"`
 }
 
@@ -312,7 +312,7 @@ func (r *systemConfigResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Read existing config first to avoid wiping other sections
-	currentConfig, err := r.client.GetSystemConfig()
+	currentConfig, err := r.client.GetSystemConfig(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read current system config, got error: %s", err))
 		return
@@ -320,7 +320,7 @@ func (r *systemConfigResource) Create(ctx context.Context, req resource.CreateRe
 
 	newConfig := r.mapModelToClient(data, *currentConfig)
 
-	updatedConfig, err := r.client.UpdateSystemConfig(newConfig)
+	updatedConfig, err := r.client.UpdateSystemConfig(ctx, newConfig)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update system config, got error: %s", err))
 		return
@@ -340,7 +340,7 @@ func (r *systemConfigResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	config, err := r.client.GetSystemConfig()
+	config, err := r.client.GetSystemConfig(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read system config, got error: %s", err))
 		return
@@ -362,7 +362,7 @@ func (r *systemConfigResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Read existing config first to avoid wiping other sections
-	currentConfig, err := r.client.GetSystemConfig()
+	currentConfig, err := r.client.GetSystemConfig(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read current system config, got error: %s", err))
 		return
@@ -370,7 +370,7 @@ func (r *systemConfigResource) Update(ctx context.Context, req resource.UpdateRe
 
 	newConfig := r.mapModelToClient(data, *currentConfig)
 
-	updatedConfig, err := r.client.UpdateSystemConfig(newConfig)
+	updatedConfig, err := r.client.UpdateSystemConfig(ctx, newConfig)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update system config, got error: %s", err))
 		return

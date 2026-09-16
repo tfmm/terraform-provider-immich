@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -34,9 +35,9 @@ type UpdateFaceRequest struct {
 	PersonId string `json:"personId"`
 }
 
-func (c *Client) GetFaces(assetId string) ([]Face, error) {
+func (c *Client) GetFaces(ctx context.Context, assetId string) ([]Face, error) {
 	url := fmt.Sprintf("%s/faces?id=%s", c.HostURL, assetId)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +56,13 @@ func (c *Client) GetFaces(assetId string) ([]Face, error) {
 	return faces, nil
 }
 
-func (c *Client) CreateFace(face CreateFaceRequest) (*Face, error) {
+func (c *Client) CreateFace(ctx context.Context, face CreateFaceRequest) (*Face, error) {
 	rb, err := json.Marshal(face)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/faces", c.HostURL), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/faces", c.HostURL), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (c *Client) CreateFace(face CreateFaceRequest) (*Face, error) {
 	return &newFace, nil
 }
 
-func (c *Client) UpdateFace(id string, update UpdateFaceRequest) (*Face, error) {
+func (c *Client) UpdateFace(ctx context.Context, id string, update UpdateFaceRequest) (*Face, error) {
 	type FaceDto struct {
 		Id string `json:"id"`
 	}
@@ -92,7 +93,7 @@ func (c *Client) UpdateFace(id string, update UpdateFaceRequest) (*Face, error) 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/faces/%s", c.HostURL, update.PersonId), bytes.NewBuffer(rb))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/faces/%s", c.HostURL, update.PersonId), bytes.NewBuffer(rb))
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +106,8 @@ func (c *Client) UpdateFace(id string, update UpdateFaceRequest) (*Face, error) 
 	return &Face{ID: id, PersonId: update.PersonId}, nil
 }
 
-func (c *Client) DeleteFace(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/faces/%s", c.HostURL, id), bytes.NewBufferString(`{"force": true}`))
+func (c *Client) DeleteFace(ctx context.Context, id string) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fmt.Sprintf("%s/faces/%s", c.HostURL, id), bytes.NewBufferString(`{"force": true}`))
 	if err != nil {
 		return err
 	}

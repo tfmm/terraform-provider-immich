@@ -196,7 +196,7 @@ func (r *albumResource) Create(ctx context.Context, req resource.CreateRequest, 
 		createReq.AssetIds = append(createReq.AssetIds, id.ValueString())
 	}
 
-	album, err := r.client.CreateAlbum(createReq)
+	album, err := r.client.CreateAlbum(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create album, got error: %s", err))
 		return
@@ -216,7 +216,7 @@ func (r *albumResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	album, err := r.client.GetAlbum(data.ID.ValueString())
+	album, err := r.client.GetAlbum(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -291,14 +291,14 @@ func (r *albumResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	usersToAdd, usersToRemove, usersToUpdateRole := diffAlbumUsers(plan.Users, state.Users)
 
 	if len(assetsToAdd) > 0 {
-		if err := r.client.AddAssetsToAlbum(plan.ID.ValueString(), assetsToAdd); err != nil {
+		if err := r.client.AddAssetsToAlbum(ctx, plan.ID.ValueString(), assetsToAdd); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to add assets to album, got error: %s", err))
 			return
 		}
 	}
 
 	if len(assetsToRemove) > 0 {
-		if err := r.client.RemoveAssetsFromAlbum(plan.ID.ValueString(), assetsToRemove); err != nil {
+		if err := r.client.RemoveAssetsFromAlbum(ctx, plan.ID.ValueString(), assetsToRemove); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to remove assets from album, got error: %s", err))
 			return
 		}
@@ -309,21 +309,21 @@ func (r *albumResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		for _, u := range usersToAdd {
 			toAdd = append(toAdd, client.AlbumUserCreate{UserId: u.UserId.ValueString(), Role: u.Role.ValueString()})
 		}
-		if _, err := r.client.AddUsersToAlbum(plan.ID.ValueString(), toAdd); err != nil {
+		if _, err := r.client.AddUsersToAlbum(ctx, plan.ID.ValueString(), toAdd); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to add users to album, got error: %s", err))
 			return
 		}
 	}
 
 	for _, u := range usersToUpdateRole {
-		if _, err := r.client.UpdateAlbumUserRole(plan.ID.ValueString(), u.UserId.ValueString(), u.Role.ValueString()); err != nil {
+		if _, err := r.client.UpdateAlbumUserRole(ctx, plan.ID.ValueString(), u.UserId.ValueString(), u.Role.ValueString()); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update album user role, got error: %s", err))
 			return
 		}
 	}
 
 	for _, id := range usersToRemove {
-		if err := r.client.RemoveUserFromAlbum(plan.ID.ValueString(), id); err != nil {
+		if err := r.client.RemoveUserFromAlbum(ctx, plan.ID.ValueString(), id); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to remove user from album, got error: %s", err))
 			return
 		}
@@ -350,7 +350,7 @@ func (r *albumResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		updateReq.IsActivityEnabled = &enabled
 	}
 
-	album, err := r.client.UpdateAlbum(plan.ID.ValueString(), updateReq)
+	album, err := r.client.UpdateAlbum(ctx, plan.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update album info, got error: %s", err))
 		return
@@ -370,7 +370,7 @@ func (r *albumResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
-	err := r.client.DeleteAlbum(data.ID.ValueString())
+	err := r.client.DeleteAlbum(ctx, data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete album, got error: %s", err))
 		return
