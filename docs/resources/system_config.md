@@ -44,9 +44,14 @@ resource "immich_system_config" "example" {
       host     = "smtp.example.com"
       port     = 587
       username = "user@example.com"
-      password = "secure-smtp-password"
       from     = "immich@example.com"
       secure   = false
+
+      # Recommended: write-only, never persisted to plan or state. Bump
+      # password_wo_version to rotate the password on a later apply.
+      # Requires Terraform 1.11+.
+      password_wo         = "secure-smtp-password"
+      password_wo_version = 1
     }
   }
 
@@ -101,7 +106,9 @@ Optional:
 - `from` (String) Sender email address.
 - `host` (String) SMTP server hostname.
 - `ignore_cert` (Boolean) Whether to ignore certificate validation errors.
-- `password` (String, Sensitive) SMTP authentication password.
+- `password` (String, Sensitive, Deprecated) SMTP authentication password. Persisted to state in plain text; mutually exclusive with `password_wo`. Deprecated in favor of `password_wo`.
+- `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only SMTP authentication password. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. Mutually exclusive with `password`.
+- `password_wo_version` (Number) Arbitrary version number for `password_wo`. Increment it to signal that the password should change; the number itself has no meaning beyond change detection, since `password_wo`'s value is never stored to compare against.
 - `port` (Number) SMTP server port.
 - `reply_to` (String) Reply-to email address.
 - `secure` (Boolean) Whether to use TLS/SSL.

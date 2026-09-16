@@ -29,9 +29,14 @@ resource "immich_system_config" "example" {
       host     = "smtp.example.com"
       port     = 587
       username = "user@example.com"
-      password = "secure-smtp-password"
       from     = "immich@example.com"
       secure   = false
+
+      # Recommended: write-only, never persisted to plan or state. Bump
+      # password_wo_version to rotate the password on a later apply.
+      # Requires Terraform 1.11+.
+      password_wo         = "secure-smtp-password"
+      password_wo_version = 1
     }
   }
 

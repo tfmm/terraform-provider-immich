@@ -106,11 +106,15 @@ func (d *usersDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	for _, user := range users {
 		userState := usersModel{
-			ID:           types.StringValue(user.ID),
-			Email:        types.StringValue(user.Email),
-			Name:         types.StringValue(user.Name),
-			IsAdmin:      types.BoolValue(user.IsAdmin),
-			StorageLabel: types.StringPointerValue(&user.StorageLabel),
+			ID:      types.StringValue(user.ID),
+			Email:   types.StringValue(user.Email),
+			Name:    types.StringValue(user.Name),
+			IsAdmin: types.BoolValue(user.IsAdmin),
+		}
+		if user.StorageLabel != "" {
+			userState.StorageLabel = types.StringValue(user.StorageLabel)
+		} else {
+			userState.StorageLabel = types.StringNull()
 		}
 		data.Users = append(data.Users, userState)
 	}

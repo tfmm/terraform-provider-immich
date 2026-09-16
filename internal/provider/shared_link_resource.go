@@ -17,6 +17,7 @@ import (
 // Ensure the implementation satisfies the expected interfaces.
 var _ resource.Resource = &sharedLinkResource{}
 var _ resource.ResourceWithImportState = &sharedLinkResource{}
+var _ resource.ResourceWithValidateConfig = &sharedLinkResource{}
 
 func NewSharedLinkResource() resource.Resource {
 	return &sharedLinkResource{}
@@ -29,18 +30,20 @@ type sharedLinkResource struct {
 
 // sharedLinkResourceModel describes the resource data model.
 type sharedLinkResourceModel struct {
-	ID            types.String   `tfsdk:"id"`
-	Type          types.String   `tfsdk:"type"`
-	AssetIds      []types.String `tfsdk:"asset_ids"`
-	AlbumId       types.String   `tfsdk:"album_id"`
-	Description   types.String   `tfsdk:"description"`
-	Password      types.String   `tfsdk:"password"`
-	Slug          types.String   `tfsdk:"slug"`
-	ExpiresAt     types.String   `tfsdk:"expires_at"`
-	AllowUpload   types.Bool     `tfsdk:"allow_upload"`
-	AllowDownload types.Bool     `tfsdk:"allow_download"`
-	ShowMetadata  types.Bool     `tfsdk:"show_metadata"`
-	Key           types.String   `tfsdk:"key"`
+	ID                types.String   `tfsdk:"id"`
+	Type              types.String   `tfsdk:"type"`
+	AssetIds          []types.String `tfsdk:"asset_ids"`
+	AlbumId           types.String   `tfsdk:"album_id"`
+	Description       types.String   `tfsdk:"description"`
+	Password          types.String   `tfsdk:"password"`
+	PasswordWO        types.String   `tfsdk:"password_wo"`
+	PasswordWOVersion types.Int64    `tfsdk:"password_wo_version"`
+	Slug              types.String   `tfsdk:"slug"`
+	ExpiresAt         types.String   `tfsdk:"expires_at"`
+	AllowUpload       types.Bool     `tfsdk:"allow_upload"`
+	AllowDownload     types.Bool     `tfsdk:"allow_download"`
+	ShowMetadata      types.Bool     `tfsdk:"show_metadata"`
+	Key               types.String   `tfsdk:"key"`
 }
 
 func (r *sharedLinkResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -85,7 +88,18 @@ func (r *sharedLinkResource) Schema(ctx context.Context, req resource.SchemaRequ
 			"password": schema.StringAttribute{
 				Optional:            true,
 				Sensitive:           true,
-				MarkdownDescription: "Optional password protection for the link.",
+				DeprecationMessage:  "Use `password_wo` instead, which is never persisted to plan or state.",
+				MarkdownDescription: "Optional password protection for the link. Persisted to state in plain text (aside from standard state encryption); mutually exclusive with `password_wo`. Deprecated in favor of `password_wo`.",
+			},
+			"password_wo": schema.StringAttribute{
+				Optional:            true,
+				Sensitive:           true,
+				WriteOnly:           true,
+				MarkdownDescription: "Write-only password protection for the link. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. Mutually exclusive with `password`.",
+			},
+			"password_wo_version": schema.Int64Attribute{
+				Optional:            true,
+				MarkdownDescription: "Arbitrary version number for `password_wo`. Increment it to signal that the password should change; the number itself has no meaning beyond change detection, since `password_wo`'s value is never stored to compare against.",
 			},
 			"slug": schema.StringAttribute{
 				Optional:            true,
@@ -116,6 +130,9 @@ func (r *sharedLinkResource) Schema(ctx context.Context, req resource.SchemaRequ
 			"key": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "The encryption key for the shared link.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -140,6 +157,24 @@ func (r *sharedLinkResource) Configure(ctx context.Context, req resource.Configu
 	r.client = client
 }
 
+func (r *sharedLinkResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data sharedLinkResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	hasPassword := !data.Password.IsNull() && !data.Password.IsUnknown()
+	hasPasswordWO := !data.PasswordWO.IsNull() && !data.PasswordWO.IsUnknown()
+
+	if hasPassword && hasPasswordWO {
+		resp.Diagnostics.AddError("Conflicting Password Attributes", "Only one of `password` or `password_wo` may be set.")
+	}
+	if hasPasswordWO && data.PasswordWOVersion.IsNull() {
+		resp.Diagnostics.AddAttributeError(path.Root("password_wo_version"), "Missing Password Version", "`password_wo_version` must be set when `password_wo` is used, and bumped to rotate the password.")
+	}
+}
+
 func (r *sharedLinkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data sharedLinkResourceModel
 
@@ -149,10 +184,22 @@ func (r *sharedLinkResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
+	var config sharedLinkResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	password := data.Password.ValueStringPointer()
+	if !config.PasswordWO.IsNull() {
+		p := config.PasswordWO.ValueString()
+		password = &p
+	}
+
 	createReq := client.SharedLinkCreateRequest{
 		Type:          data.Type.ValueString(),
 		Description:   data.Description.ValueStringPointer(),
-		Password:      data.Password.ValueStringPointer(),
+		Password:      password,
 		Slug:          data.Slug.ValueStringPointer(),
 		ExpiresAt:     data.ExpiresAt.ValueStringPointer(),
 		AllowUpload:   data.AllowUpload.ValueBoolPointer(),
@@ -217,31 +264,44 @@ func (r *sharedLinkResource) Read(ctx context.Context, req resource.ReadRequest,
 }
 
 func (r *sharedLinkResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data sharedLinkResourceModel
+	var plan, state, config sharedLinkResourceModel
 
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	updateReq := client.SharedLinkUpdateRequest{
-		Description:   data.Description.ValueStringPointer(),
-		Password:      data.Password.ValueStringPointer(),
-		Slug:          data.Slug.ValueStringPointer(),
-		ExpiresAt:     data.ExpiresAt.ValueStringPointer(),
-		AllowUpload:   data.AllowUpload.ValueBoolPointer(),
-		AllowDownload: data.AllowDownload.ValueBoolPointer(),
-		ShowMetadata:  data.ShowMetadata.ValueBoolPointer(),
+		Description:   plan.Description.ValueStringPointer(),
+		Slug:          plan.Slug.ValueStringPointer(),
+		ExpiresAt:     plan.ExpiresAt.ValueStringPointer(),
+		AllowUpload:   plan.AllowUpload.ValueBoolPointer(),
+		AllowDownload: plan.AllowDownload.ValueBoolPointer(),
+		ShowMetadata:  plan.ShowMetadata.ValueBoolPointer(),
 	}
 
-	_, err := r.client.UpdateSharedLink(ctx, data.ID.ValueString(), updateReq)
+	if !config.PasswordWO.IsNull() {
+		// The write-only value itself is never available to compare against
+		// a prior apply, so a bump in password_wo_version is the only
+		// signal that the password should be rotated.
+		if !plan.PasswordWOVersion.Equal(state.PasswordWOVersion) {
+			p := config.PasswordWO.ValueString()
+			updateReq.Password = &p
+		}
+	} else {
+		updateReq.Password = plan.Password.ValueStringPointer()
+	}
+
+	_, err := r.client.UpdateSharedLink(ctx, plan.ID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update shared link, got error: %s", err))
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *sharedLinkResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

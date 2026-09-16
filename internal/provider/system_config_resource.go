@@ -14,6 +14,7 @@ import (
 // Ensure the implementation satisfies the expected interfaces.
 var _ resource.Resource = &systemConfigResource{}
 var _ resource.ResourceWithImportState = &systemConfigResource{}
+var _ resource.ResourceWithValidateConfig = &systemConfigResource{}
 
 func NewSystemConfigResource() resource.Resource {
 	return &systemConfigResource{}
@@ -55,15 +56,17 @@ type notificationsModel struct {
 }
 
 type smtpModel struct {
-	Enabled    types.Bool   `tfsdk:"enabled"`
-	Host       types.String `tfsdk:"host"`
-	Port       types.Int64  `tfsdk:"port"`
-	Username   types.String `tfsdk:"username"`
-	Password   types.String `tfsdk:"password"`
-	From       types.String `tfsdk:"from"`
-	ReplyTo    types.String `tfsdk:"reply_to"`
-	Secure     types.Bool   `tfsdk:"secure"`
-	IgnoreCert types.Bool   `tfsdk:"ignore_cert"`
+	Enabled           types.Bool   `tfsdk:"enabled"`
+	Host              types.String `tfsdk:"host"`
+	Port              types.Int64  `tfsdk:"port"`
+	Username          types.String `tfsdk:"username"`
+	Password          types.String `tfsdk:"password"`
+	PasswordWO        types.String `tfsdk:"password_wo"`
+	PasswordWOVersion types.Int64  `tfsdk:"password_wo_version"`
+	From              types.String `tfsdk:"from"`
+	ReplyTo           types.String `tfsdk:"reply_to"`
+	Secure            types.Bool   `tfsdk:"secure"`
+	IgnoreCert        types.Bool   `tfsdk:"ignore_cert"`
 }
 
 type templatesModel struct {
@@ -233,7 +236,18 @@ func (r *systemConfigResource) Schema(ctx context.Context, req resource.SchemaRe
 							"password": schema.StringAttribute{
 								Optional:            true,
 								Sensitive:           true,
-								MarkdownDescription: "SMTP authentication password.",
+								DeprecationMessage:  "Use `password_wo` instead, which is never persisted to plan or state.",
+								MarkdownDescription: "SMTP authentication password. Persisted to state in plain text; mutually exclusive with `password_wo`. Deprecated in favor of `password_wo`.",
+							},
+							"password_wo": schema.StringAttribute{
+								Optional:            true,
+								Sensitive:           true,
+								WriteOnly:           true,
+								MarkdownDescription: "Write-only SMTP authentication password. Never persisted to plan or state. Requires Terraform 1.11+. Must be paired with `password_wo_version`; bump the version to rotate the password on a later apply. Mutually exclusive with `password`.",
+							},
+							"password_wo_version": schema.Int64Attribute{
+								Optional:            true,
+								MarkdownDescription: "Arbitrary version number for `password_wo`. Increment it to signal that the password should change; the number itself has no meaning beyond change detection, since `password_wo`'s value is never stored to compare against.",
 							},
 							"from": schema.StringAttribute{
 								Optional:            true,
@@ -302,11 +316,71 @@ func (r *systemConfigResource) Configure(ctx context.Context, req resource.Confi
 	r.client = client
 }
 
+func (r *systemConfigResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data systemConfigResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	smtp := smtpModelOrNil(&data)
+	if smtp == nil {
+		return
+	}
+
+	hasPassword := !smtp.Password.IsNull() && !smtp.Password.IsUnknown()
+	hasPasswordWO := !smtp.PasswordWO.IsNull() && !smtp.PasswordWO.IsUnknown()
+
+	if hasPassword && hasPasswordWO {
+		resp.Diagnostics.AddError("Conflicting Password Attributes", "Only one of `notifications.smtp.password` or `notifications.smtp.password_wo` may be set.")
+	}
+	if hasPasswordWO && smtp.PasswordWOVersion.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("notifications").AtName("smtp").AtName("password_wo_version"),
+			"Missing Password Version",
+			"`notifications.smtp.password_wo_version` must be set when `notifications.smtp.password_wo` is used, and bumped to rotate the password.",
+		)
+	}
+}
+
+// smtpModelOrNil returns model.Notifications.SMTP, or nil if either pointer
+// in the chain is unset.
+func smtpModelOrNil(model *systemConfigResourceModel) *smtpModel {
+	if model.Notifications == nil {
+		return nil
+	}
+	return model.Notifications.SMTP
+}
+
+// withSMTPWriteOnlyPassword returns a copy of model with
+// Notifications.SMTP.Password overridden to writeOnlyPassword, without
+// mutating the original model (and in particular, without mutating the
+// shared *smtpModel/*notificationsModel the original model's pointers refer
+// to) - the original model still gets persisted to state afterward and must
+// never end up carrying the write-only secret.
+func withSMTPWriteOnlyPassword(model systemConfigResourceModel, writeOnlyPassword string) systemConfigResourceModel {
+	if model.Notifications == nil || model.Notifications.SMTP == nil {
+		return model
+	}
+	smtpCopy := *model.Notifications.SMTP
+	smtpCopy.Password = types.StringValue(writeOnlyPassword)
+	notificationsCopy := *model.Notifications
+	notificationsCopy.SMTP = &smtpCopy
+	model.Notifications = &notificationsCopy
+	return model
+}
+
 func (r *systemConfigResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data systemConfigResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var config systemConfigResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -318,7 +392,12 @@ func (r *systemConfigResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	newConfig := r.mapModelToClient(data, *currentConfig)
+	apiData := data
+	if configSMTP := smtpModelOrNil(&config); configSMTP != nil && !configSMTP.PasswordWO.IsNull() {
+		apiData = withSMTPWriteOnlyPassword(data, configSMTP.PasswordWO.ValueString())
+	}
+
+	newConfig := r.mapModelToClient(apiData, *currentConfig)
 
 	updatedConfig, err := r.client.UpdateSystemConfig(ctx, newConfig)
 	if err != nil {
@@ -353,9 +432,11 @@ func (r *systemConfigResource) Read(ctx context.Context, req resource.ReadReques
 }
 
 func (r *systemConfigResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data systemConfigResourceModel
+	var data, state, config systemConfigResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -368,7 +449,20 @@ func (r *systemConfigResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	newConfig := r.mapModelToClient(data, *currentConfig)
+	apiData := data
+	if configSMTP := smtpModelOrNil(&config); configSMTP != nil && !configSMTP.PasswordWO.IsNull() {
+		planSMTP := smtpModelOrNil(&data)
+		stateSMTP := smtpModelOrNil(&state)
+		// The write-only value itself is never available to compare against
+		// a prior apply, so a bump in password_wo_version is the only
+		// signal that the password should be rotated.
+		versionChanged := planSMTP == nil || stateSMTP == nil || !planSMTP.PasswordWOVersion.Equal(stateSMTP.PasswordWOVersion)
+		if versionChanged {
+			apiData = withSMTPWriteOnlyPassword(data, configSMTP.PasswordWO.ValueString())
+		}
+	}
+
+	newConfig := r.mapModelToClient(apiData, *currentConfig)
 
 	updatedConfig, err := r.client.UpdateSystemConfig(ctx, newConfig)
 	if err != nil {
