@@ -159,6 +159,10 @@ func (r *workflowResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 	workflow, err := r.client.GetWorkflow(data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read workflow, got error: %s", err))
 		return
 	}

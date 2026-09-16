@@ -164,6 +164,10 @@ func (r *libraryResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 	library, err := r.client.GetLibrary(data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read library, got error: %s", err))
 		return
 	}

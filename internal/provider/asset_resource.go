@@ -261,6 +261,10 @@ func (r *assetResource) Read(ctx context.Context, req resource.ReadRequest, resp
 
 	asset, err := r.client.GetAsset(data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read asset, got error: %s", err))
 		return
 	}

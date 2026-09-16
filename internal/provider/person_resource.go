@@ -270,6 +270,10 @@ func (r *personResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	person, err := r.client.GetPerson(data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read person, got error: %s", err))
 		return
 	}

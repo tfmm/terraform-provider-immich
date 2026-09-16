@@ -139,6 +139,10 @@ func (r *stackResource) Read(ctx context.Context, req resource.ReadRequest, resp
 
 	stack, err := r.client.GetStack(data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read stack, got error: %s", err))
 		return
 	}

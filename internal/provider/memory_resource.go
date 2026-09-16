@@ -122,6 +122,10 @@ func (r *memoryResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	memory, err := r.client.GetMemory(data.ID.ValueString())
 	if err != nil {
+		if client.IsNotFound(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read memory, got error: %s", err))
 		return
 	}
